@@ -1,12 +1,19 @@
-document.addEventListener("click", function (e) {
-  if (e.target.innerText === "Send") {
-    const composeBox = document.querySelector('[aria-label="Message Body"]');
-    if (composeBox) {
-      const trackingId = `pixel${Math.random()}`; // Generate dynamically
-      const trackingPixel = `<img src="http://localhost:4000/track/${trackingId}" width="1" height="1" />`;
-      const url = `http://localhost:4000/track/${trackingId}`
-      console.log(url)
-      composeBox.innerHTML += trackingPixel;
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const observer = new MutationObserver(() => {
+      const composeWindows = document.querySelectorAll("div[role='textbox']");
+      composeWindows.forEach((win) => {
+        if (!win.dataset.tracked) {
+          win.dataset.tracked = "true";
+          win.addEventListener("blur", () => {
+            const pixelURL = `http://localhost:4000/pixel.png?emailId=${Date.now()}`;
+            win.innerHTML += `<img src="${pixelURL}" width="1" height="1" style="display:none"/>`;
+          });
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  } catch (err) {
+    console.error("Tracking extension error:", err);
   }
 });

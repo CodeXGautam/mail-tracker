@@ -1,21 +1,20 @@
 {
-  "manifest_version": 3,
-  "name": "Mail Tracker",
+  "manifest_version": 2,
+  "name": "Mail Tracker for Firefox",
   "version": "1.0",
-  "description": "Track when your sent mails are opened",
-  "permissions": ["storage", "scripting", "activeTab", "tabs"],
-  "host_permissions": ["<all_urls>"],
+  "description": "Track when your sent emails are opened.",
+  "permissions": ["tabs", "activeTab", "storage", "*://*/*"],
   "background": {
-    "service_worker": "server.js"
-  },
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icons/icon.png"
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {
-      "matches": ["*://mail.google.com/*"],
-      "js": ["content.js"]
+      "matches": ["*://mail.google.com/*", "*://outlook.live.com/*"],
+      "js": ["script.js"]
     }
-  ]
+  ],
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "assets/icon.png"
+  }
 }

@@ -1,19 +1,18 @@
-import express from 'express';
-const app = express();
+import dotenv from 'dotenv';
+import connectDB from './db/db.js';
+import { app } from './app.js';
 
-app.get("/track/:id", (req, res) => {
-  const id = req.params.id;
-  console.log(`Email opened: ${id}`);
-  // Store in DB or analytics
-  const pixel = Buffer.from(
-    "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-    "base64"
-  );
-  res.writeHead(200, {
-    "Content-Type": "image/gif",
-    "Content-Length": pixel.length,
-  });
-  res.end(pixel);
-});
 
-app.listen(4000, () => console.log("Tracking server running on port 4000"));
+dotenv.config({
+    path:'./.env'
+})
+
+connectDB()
+.then(()=>{
+    app.listen(process.env.PORT||8000, ()=>{
+        console.log(`Server is running at port : ${process.env.PORT}`);
+    })
+})
+.catch((err)=>{
+    console.log("Mongo DB connection failed !!", err)
+})

@@ -1,25 +1,5 @@
 {
-  "name": "firefox-extension",
-  "version": "1.0.0",
-  "description": "This is a firefox extension for mail traking",
-  "homepage": "https://github.com/CodeXGautam/mail-tracker#readme",
-  "bugs": {
-    "url": "https://github.com/CodeXGautam/mail-tracker/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CodeXGautam/mail-tracker.git"
-  },
-  "license": "ISC",
-  "author": "",
-  "type": "module",
-  "main": "script.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "dependencies": {
-    "express": "^5.1.0",
-    "mongoose": "^8.15.1",
-    "nodemon": "^3.1.10"
+    "webextension-polyfill": "^0.12.0"
   }
 }
