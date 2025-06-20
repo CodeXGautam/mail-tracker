@@ -2,6 +2,12 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   checkStatus();
+  
+  // Add event listener for initialize button
+  const initBtn = document.getElementById('initBtn');
+  if (initBtn) {
+    initBtn.addEventListener('click', initializeUser);
+  }
 });
 
 async function checkStatus() {
