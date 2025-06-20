@@ -14,10 +14,9 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use((req, res, next) => {
   // More comprehensive CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "https://mail-tracker-k1hl.onrender.com");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Max-Age", "86400");
   
   // Handle preflight requests
