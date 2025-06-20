@@ -13,7 +13,7 @@ function insertTrackingPixel(emailId) {
     }
   }
   console.log("insertTrackingPixel called with emailId:", emailId);
-  const pixelUrl = `http://localhost:8000/pixel.png?emailId=${encodeURIComponent(emailId)}`;
+  const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
   
   // Create a more email-client-friendly tracking pixel
   const pixelTag = `<img src="${pixelUrl}" width="1" height="1" style="display:none; opacity:0; position:absolute; left:-9999px; top:-9999px;" alt="" border="0" />`;
@@ -69,7 +69,7 @@ window.testPixelInsertion = function() {
 // Debug function to test pixel tracking by simulating a request
 window.testPixelTracking = function(emailId) {
   console.log("🧪 Testing pixel tracking for emailId:", emailId);
-  const pixelUrl = `http://localhost:8000/pixel.png?emailId=${encodeURIComponent(emailId)}`;
+  const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
   
   // Create an image element to simulate the pixel request
   const img = new Image();

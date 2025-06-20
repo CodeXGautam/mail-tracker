@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
+import mongoose from "mongoose";
 import Email from "./model/email.model.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,15 @@ app.use((req, res, next) => {
     return res.sendStatus(200);
   }
   next();
+});
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected"
+  });
 });
 
 const LOG_FILE = path.join(__dirname, "logs.json");
@@ -77,11 +87,15 @@ app.get("/pixel.png", async (req, res) => {
 
     // --- Update email status to 'read' using emailId ---
     try {
-      const result = await Email.findOneAndUpdate(
-        { emailId },
-        { $set: { status: "read", lastUpdate: new Date() } }
-      );
-      console.log("DB update for emailId:", emailId, "Result:", result);
+      if (mongoose.connection.readyState) {
+        const result = await Email.findOneAndUpdate(
+          { emailId },
+          { $set: { status: "read", lastUpdate: new Date() } }
+        );
+        console.log("DB update for emailId:", emailId, "Result:", result);
+      } else {
+        console.log("⚠️ Database not connected, skipping DB update for emailId:", emailId);
+      }
     } catch (err) {
       console.error("Failed to update email status to 'read' for:", emailId, err);
     }
@@ -138,6 +152,23 @@ app.delete("/logs", async (req, res) => {
 app.post("/emails", async (req, res) => {
   try {
     const email = req.body;
+    
+    // Check if database is connected
+    if (!mongoose.connection.readyState) {
+      console.log("⚠️ Database not connected, storing in logs only");
+      // Store in logs as fallback
+      await checkLogRotation();
+      let currentLogs = [];
+      try {
+        currentLogs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+      } catch (err) {
+        currentLogs = [];
+      }
+      currentLogs.push({ ...email, timestamp: new Date().toISOString() });
+      await fs.writeFile(LOG_FILE, JSON.stringify(currentLogs, null, 2));
+      return res.json({ success: true, message: "Stored in logs (DB unavailable)" });
+    }
+    
     // Allow status-only updates
     if (email && email.emailId && email.status && !email.hasTrackingPixel) {
       await Email.findOneAndUpdate(
@@ -158,6 +189,7 @@ app.post("/emails", async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
+    console.error("Error storing email:", err);
     res.status(500).json({ error: "Failed to store email" });
   }
 });
@@ -165,9 +197,23 @@ app.post("/emails", async (req, res) => {
 // Fetch all stored emails
 app.get("/emails", async (req, res) => {
   try {
+    // Check if database is connected
+    if (!mongoose.connection.readyState) {
+      console.log("⚠️ Database not connected, returning logs only");
+      // Return logs as fallback
+      let logs = [];
+      try {
+        logs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+      } catch (err) {
+        logs = [];
+      }
+      return res.json(logs);
+    }
+    
     const emails = await Email.find().sort({ sentTime: -1 }).lean();
     res.json(emails);
-  } catch {
+  } catch (err) {
+    console.error("Error fetching emails:", err);
     res.status(500).json({ error: "Failed to read emails" });
   }
 });

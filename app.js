@@ -19,7 +19,7 @@ function initDashboard() {
 document.addEventListener('DOMContentLoaded', initDashboard);
 
 function checkServerStatus() {
-    fetch('http://localhost:8000/logs')
+    fetch('https://mail-tracker-k1hl.onrender.com/logs')
         .then(response => {
             if (response.ok) {
                 document.getElementById('server-status').className = 'status-indicator status-online';
@@ -40,7 +40,7 @@ function loadData() {
 }
 
 function loadEmails() {
-    fetch('http://localhost:8000/emails')
+    fetch('https://mail-tracker-k1hl.onrender.com/emails')
         .then(response => response.json())
         .then(data => {
             console.log("Fetched emails from backend:", data);
@@ -65,7 +65,7 @@ function loadEmails() {
 }
 
 function loadLogs() {
-    fetch('http://localhost:8000/logs')
+    fetch('https://mail-tracker-k1hl.onrender.com/logs')
         .then(response => response.json())
         .then(data => {
             logs = Array.isArray(data) ? data : [];

@@ -78,7 +78,7 @@ function handleEmailSent(email, sendResponse) {
 
       console.log("About to POST to backend /emails with definitive data", trackedEmail);
 
-      fetch("http://localhost:8000/emails", {
+      fetch("https://mail-tracker-k1hl.onrender.com/emails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -127,7 +127,7 @@ function handleStatusUpdate(emailId, status, details = {}) {
       
       showStatusNotification(emailId, status, details);
 
-      fetch("http://localhost:8000/emails", {
+      fetch("https://mail-tracker-k1hl.onrender.com/emails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

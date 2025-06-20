@@ -84,7 +84,7 @@
         }
 
         function insertTrackingPixel(emailId) {
-            const pixelUrl = `http://localhost:8000/pixel.png?emailId=${encodeURIComponent(emailId)}`;
+            const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
             const pixelTag = `<img src="${pixelUrl}" width="1" height="1" style="opacity:0.01;" alt="tracker">`;
 
             const composeSelectors = [
