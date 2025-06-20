@@ -1,3 +1,5 @@
+console.log("Mail Tracker script.js loaded");
+
 function insertTrackingPixel(emailId) {
   const pixelUrl = `http://localhost:8000/pixel.png?emailId=${encodeURIComponent(emailId)}`;
   const pixelTag = `<img src="${pixelUrl}" width="1" height="1" style="opacity:0.01;" alt="tracker">`;
@@ -292,27 +294,27 @@ function initGmailTracker() {
   
   // Main observer for email lists
   const observeMailLists = () => {
+    console.log("observeMailLists called");
     observers.forEach(obs => obs.disconnect());
     observers = [];
     const mailContainers = [
-      document.querySelector('[role="main"]'), 
-      ...document.querySelectorAll('[role="grid"]')
+      document.querySelector('div.Cp')
     ].filter(Boolean);
     mailContainers.forEach(container => {
-      const list = container.querySelector('[role="list"]');
-      if (!list || list.hasAttribute('data-email-tracker-observed')) return;
-      list.setAttribute('data-email-tracker-observed', 'true');
+      if (!container || container.hasAttribute('data-email-tracker-observed')) return;
+      container.setAttribute('data-email-tracker-observed', 'true');
+      console.log("Setting up observer on", container);
       const observer = new MutationObserver(handleMailListChanges);
-      observer.observe(list, {
+      observer.observe(container, {
         childList: true,
-        subtree: true,
-        attributeFilter: ['aria-label']
+        subtree: true
       });
       observers.push(observer);
       processVisibleEmails(getCurrentFolder());
     });
   };
   const handleMailListChanges = (mutations) => {
+    console.log("handleMailListChanges called", mutations);
     const folder = getCurrentFolder();
     mutations.forEach(mutation => {
       if (mutation.type === 'childList') {
@@ -322,27 +324,71 @@ function initGmailTracker() {
       }
     });
   };
-  const getCurrentFolder = () => {
-    const activeItems = [
-      document.querySelector('[role="navigation"] [aria-selected="true"]'),
-      document.querySelector('[role="tablist"] [aria-selected="true"]')
-    ].filter(Boolean);
-    return activeItems[0]?.getAttribute('aria-label') || 'unknown';
-  };
-  const processVisibleEmails = (folder) => {
-    const isSentFolder = folder.toLowerCase().includes('sent');
-    const emailElements = Array.from(document.querySelectorAll('[role="listitem"]'));
+  function getCurrentFolder() {
+    // Try to get folder from URL hash
+    const hash = window.location.hash;
+    if (hash) {
+      if (/^#sent/i.test(hash)) {
+        console.log("Detected folder from URL hash: Sent");
+        return "Sent";
+      }
+      if (/^#inbox/i.test(hash)) {
+        console.log("Detected folder from URL hash: Inbox");
+        return "Inbox";
+      }
+      // Add more as needed
+      console.log("Detected folder from URL hash:", hash);
+      return hash.replace(/^#/, '').replace(/\/.*/, '').replace(/-/g, ' ').replace(/\d+/g, '').trim();
+    }
+    // Fallbacks
+    let el = document.querySelector('.nU .J-Ke.n0[aria-label]');
+    if (!el) {
+      el = document.querySelector('[role="navigation"] [aria-selected="true"]');
+    }
+    if (!el) {
+      el = document.querySelector('.J-Ke.n0[aria-label]');
+    }
+    if (!el) {
+      el = document.querySelector('[aria-label][href*="#"]');
+    }
+    console.log("Detected folder element:", el);
+    const folder = el?.getAttribute('aria-label') || 'unknown';
+    console.log("Detected folder name:", folder);
+    return folder;
+  }
+  window.getCurrentFolder = getCurrentFolder;
+  function processVisibleEmails(folder) {
+    console.log("processVisibleEmails called for folder:", folder);
+    const isSentFolder = /sent/i.test(folder);
+    console.log("isSentFolder:", isSentFolder, "folder:", folder);
+    const emailElements = Array.from(document.querySelectorAll('tr[role="row"]'));
+    console.log("Found", emailElements.length, "email rows");
     emailElements.forEach(element => {
       try {
         const email = extractEmailData(element, isSentFolder);
-        if (!email || emailMap.has(email.id)) return;
+        if (!email) {
+          console.log("extractEmailData returned null for element:", element);
+          return;
+        }
+        if (emailMap.has(email.id)) {
+          console.log("Email already processed:", email.id);
+          return;
+        }
+        console.log("Processing email element:", email);
         emailMap.set(email.id, true);
         email.folder = folder;
         email.isSent = isSentFolder;
         if (isSentFolder) {
           email.deliveryStatus = getDeliveryStatus(element);
           setupSentEmailTracking(email, element);
+          // Send prepareEmailTracking message to background
+          console.log("Sending prepareEmailTracking message to background", email);
+          browser.runtime.sendMessage({
+            type: "prepareEmailTracking",
+            email
+          });
         }
+        console.log("Sending emailDetected message to background", email);
         browser.runtime.sendMessage({
           type: "emailDetected",
           email
@@ -351,32 +397,61 @@ function initGmailTracker() {
         console.error('Error processing email element:', error);
       }
     });
-  };
-  const extractEmailData = (element, isSentFolder) => {
-    const id = element.getAttribute('data-legacy-thread-id') || 
-               element.getAttribute('data-message-id') || 
-               element.id;
-    if (!id) return null;
-    const subjectEl = element.querySelector('[data-thread-perm-id]') || 
-                     element.querySelector('[data-message-id]');
-    const dateEl = element.querySelector('[data-tooltip]');
-    const fromEl = isSentFolder 
-      ? element.querySelector('[email][aria-label^="To:"]')
-      : element.querySelector('[email]:not([aria-label^="To:"])');
-    if (!subjectEl || !fromEl) return null;
+  }
+  window.processVisibleEmails = processVisibleEmails;
+  function extractEmailData(element, isSentFolder) {
+    // Get all <td> in the row
+    const tds = element.querySelectorAll('td');
+    if (tds.length < 4) return null;
+
+    // Recipient (for Sent folder)
+    let to = "";
+    let toName = "";
+    const toSpan = element.querySelector('span[email]');
+    if (toSpan) {
+      to = toSpan.getAttribute('email') || "";
+      toName = toSpan.textContent.trim();
+    }
+
+    // Subject
+    let subject = "";
+    let subjectSpan = element.querySelector('span.bog');
+    if (subjectSpan) {
+      subject = subjectSpan.textContent.trim();
+    }
+
+    // ID
+    let id = "";
+    if (subjectSpan) {
+      id = subjectSpan.getAttribute('data-thread-id') ||
+           subjectSpan.getAttribute('data-legacy-thread-id') ||
+           subjectSpan.getAttribute('data-legacy-last-message-id') ||
+           element.id;
+    } else {
+      id = element.id;
+    }
+
+    // Date (last <td> or span.Zt)
+    let date = "";
+    const dateSpan = element.querySelector('span.Zt');
+    if (dateSpan) {
+      date = dateSpan.textContent.trim();
+    } else if (tds.length > 0) {
+      date = tds[tds.length - 1].textContent.trim();
+    }
+
+    if (!id || !subject) return null;
+
     return {
       id,
-      from: fromEl.getAttribute('name') || fromEl.textContent.trim(),
-      email: fromEl.getAttribute('email'),
-      subject: subjectEl.textContent.trim(),
-      date: dateEl?.getAttribute('data-tooltip') || new Date().toISOString(),
-      read: element.getAttribute('aria-read') === 'true',
-      starred: !!element.querySelector('[aria-label^="Starred"]'),
-      labels: Array.from(element.querySelectorAll('[aria-label^="Label:"]'))
-        .map(el => el.getAttribute('aria-label').replace('Label:', '').trim()),
+      to,
+      toName,
+      subject,
+      date,
+      read: !element.classList.contains('zE'), // zE = unread
       elementId: element.id
     };
-  };
+  }
   const getDeliveryStatus = (element) => {
     const statusIndicator = element.querySelector('[aria-label*="delivery status:"]');
     if (!statusIndicator) return 'sent';
@@ -457,3 +532,8 @@ function initGmailTracker() {
 window.addEventListener('unload', () => {
   observers.forEach(obs => obs.disconnect());
 });
+
+// Periodic fallback: call processVisibleEmails every 5 seconds
+setInterval(() => {
+  processVisibleEmails(getCurrentFolder());
+}, 5000); // every 5 seconds

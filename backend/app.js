@@ -13,6 +13,11 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
   next();
 });
 
@@ -95,9 +100,14 @@ app.get("/pixel.png", async (req, res) => {
 
 app.get("/logs", async (req, res) => {
   try {
-    const logs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+    let logs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+    if (!Array.isArray(logs)) {
+      logs = [];
+      await fs.writeFile(LOG_FILE, "[]");
+    }
     res.json(logs);
-  } catch {
+  } catch (err) {
+    console.error("Failed to read logs:", err);
     res.status(500).json({ error: "Failed to read logs" });
   }
 });
@@ -115,8 +125,9 @@ app.delete("/logs", async (req, res) => {
 app.post("/emails", async (req, res) => {
   try {
     const email = req.body;
-    if (!email || !email.id) return res.status(400).json({ error: "Missing email data or id" });
-
+    if (!email || !email.id || !email.hasTrackingPixel) {
+      return res.status(400).json({ error: "Missing email data, id, or tracking pixel" });
+    }
     // Upsert (insert or update)
     await Email.findOneAndUpdate(
       { id: email.id },
@@ -136,6 +147,15 @@ app.get("/emails", async (req, res) => {
     res.json(emails);
   } catch {
     res.status(500).json({ error: "Failed to read emails" });
+  }
+});
+
+app.delete("/emails", async (req, res) => {
+  try {
+    await Email.deleteMany({});
+    res.json({ message: "All emails deleted" });
+  } catch {
+    res.status(500).json({ error: "Failed to delete emails" });
   }
 });
 

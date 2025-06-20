@@ -1,3 +1,5 @@
+console.log("Mail Tracker background.js loaded");
+
 // Email Tracking Status Constants
 const TRACKING_STATUS = {
   SENT: 'sent',
@@ -26,6 +28,7 @@ browser.storage.local.get(['extensionState'], (result) => {
 
 // Main message handler
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Background received message:", request.type, request); // Debug log
   switch (request.type) {
     case 'prepareEmailTracking':
       handlePrepareEmail(request.email, sendResponse);
@@ -70,16 +73,23 @@ function handlePrepareEmail(email, sendResponse) {
       extensionState.sentEmails = sentEmails;
       extensionState.lastUpdate = new Date().toISOString();
       saveExtensionState();
-      // POST to backend
-      fetch("http://localhost:8000/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...trackedEmail,
-          status: TRACKING_STATUS.SENT,
-          sentTime: new Date().toISOString()
-        })
-      });
+
+      console.log("About to POST to backend /emails", trackedEmail); // Debug log
+
+      const hasTrackingPixel = trackedEmail.body && trackedEmail.body.includes('pixel.png');
+      if (hasTrackingPixel) {
+        fetch("http://localhost:8000/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...trackedEmail,
+            status: TRACKING_STATUS.SENT,
+            sentTime: new Date().toISOString(),
+            hasTrackingPixel
+          })
+        });
+      }
+
       sendResponse({
         trackingEnabled: true,
         email: trackedEmail
@@ -218,6 +228,16 @@ function handleStatusUpdate(emailId, status, details = {}) {
       saveExtensionState();
       
       showStatusNotification(emailId, status, details);
+
+      fetch("http://localhost:8000/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: emailId,
+          status,
+          lastUpdate: new Date().toISOString()
+        })
+      });
     });
   });
 }

@@ -43,13 +43,15 @@ function loadEmails() {
     fetch('http://localhost:8000/emails')
         .then(response => response.json())
         .then(data => {
-            emails = data.map(email => ({
-                id: email.id,
-                subject: email.subject,
-                to: email.to,
-                status: email.status,
-                timestamp: email.sentTime || email.timestamp || new Date().toISOString()
-            }));
+            emails = data
+                .filter(email => email.hasTrackingPixel)
+                .map(email => ({
+                    id: email.id,
+                    subject: email.subject,
+                    to: email.to,
+                    status: email.status,
+                    timestamp: email.sentTime || email.timestamp || new Date().toISOString()
+                }));
             updateEmailDisplay();
             updateStats();
         })
@@ -65,7 +67,7 @@ function loadLogs() {
     fetch('http://localhost:8000/logs')
         .then(response => response.json())
         .then(data => {
-            logs = data;
+            logs = Array.isArray(data) ? data : [];
             updateLogDisplay();
             updateStats();
         })

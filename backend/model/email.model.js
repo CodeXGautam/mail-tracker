@@ -8,7 +8,6 @@ const emailSchema = new mongoose.Schema({
   sentTime: Date,
   lastUpdate: Date,
   trackingData: Object,
-  // Add any other fields you want to store
 }, { timestamps: true });
 
 export default mongoose.model("Email", emailSchema);
