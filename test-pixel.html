@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Insertion Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .compose-area {
+            border: 2px solid #ccc;
+            min-height: 200px;
+            padding: 10px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        .compose-area[contenteditable="true"] {
+            background: white;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tracking Pixel Insertion Test</h1>
+    
+    <div>
+        <button onclick="testPixelInsertion()">Test Pixel Insertion</button>
+        <button onclick="showComposeAreas()">Show Compose Areas</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <h3>Simulated Gmail Compose Area:</h3>
+    <div class="compose-area" contenteditable="true" role="textbox" aria-label="Message Body">
+        Start typing your message here...
+    </div>
+
+    <h3>Console Log:</h3>
+    <div id="log" class="log"></div>
+
+    <script>
+        // Override console.log to also display in the page
+        const originalLog = console.log;
+        const logDiv = document.getElementById('log');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const logEntry = document.createElement('div');
+            logEntry.textContent = new Date().toLocaleTimeString() + ': ' + args.join(' ');
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+
+        // Include the tracking pixel functions
+        function generateEmailId() {
+            return `mailtrack-${Date.now()}`;
+        }
+
+        function insertTrackingPixel(emailId) {
+            const pixelUrl = `http://localhost:8000/pixel.png?emailId=${encodeURIComponent(emailId)}`;
+            const pixelTag = `<img src="${pixelUrl}" width="1" height="1" style="opacity:0.01;" alt="tracker">`;
+
+            const composeSelectors = [
+                '[role="textbox"][aria-label*="Message Body"]',
+                '[role="textbox"][aria-label*="Compose"]',
+                '[contenteditable="true"][aria-label*="Message Body"]',
+                '[contenteditable="true"][aria-label*="Compose"]',
+                '[data-tooltip*="Message Body"]',
+                '.Am.Al.editable'
+            ];
+
+            let composeArea = null;
+            for (const selector of composeSelectors) {
+                composeArea = document.querySelector(selector);
+                if (composeArea) {
+                    console.log("🎯 Found compose area with selector:", selector);
+                    break;
+                }
+            }
+
+            if (composeArea && !composeArea.innerHTML.includes(pixelUrl)) {
+                composeArea.innerHTML += pixelTag;
+                console.log("📩 Pixel inserted into email body:", pixelUrl);
+                console.log("📝 Compose area content length:", composeArea.innerHTML.length);
+                return true;
+            } else if (composeArea) {
+                console.log("⚠️ Compose area found but pixel already exists or insertion failed");
+                return false;
+            } else {
+                console.log("❌ No compose area found with any selector");
+                console.log("🔍 Available elements with role='textbox':", document.querySelectorAll('[role="textbox"]').length);
+                console.log("🔍 Available contenteditable elements:", document.querySelectorAll('[contenteditable="true"]').length);
+                return false;
+            }
+        }
+
+        // Make functions available globally
+        window.testPixelInsertion = function() {
+            console.log("🧪 Testing pixel insertion...");
+            const emailId = generateEmailId();
+            const result = insertTrackingPixel(emailId);
+            console.log("🧪 Test result:", result);
+            return result;
+        };
+
+        window.showComposeAreas = function() {
+            console.log("🔍 Searching for compose areas...");
+            const selectors = [
+                '[role="textbox"]',
+                '[contenteditable="true"]',
+                '[aria-label*="Message"]',
+                '[aria-label*="Compose"]',
+                '.Am.Al'
+            ];
+            
+            selectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                console.log(`🔍 ${selector}:`, elements.length, "elements found");
+                elements.forEach((el, i) => {
+                    console.log(`  ${i + 1}.`, {
+                        ariaLabel: el.getAttribute('aria-label'),
+                        role: el.getAttribute('role'),
+                        contenteditable: el.getAttribute('contenteditable'),
+                        className: el.className,
+                        id: el.id
+                    });
+                });
+            });
+        };
+
+        console.log("📡 Test page loaded - ready to test pixel insertion");
+    </script>
+</body>
+</html> 

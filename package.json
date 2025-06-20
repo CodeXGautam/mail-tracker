@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "googleapis": "^150.0.1",
+    "nodemailer": "^7.0.3",
+    "open": "^10.1.2",
     "webextension-polyfill": "^0.12.0"
   }
 }
