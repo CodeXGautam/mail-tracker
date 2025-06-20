@@ -43,6 +43,7 @@ function loadEmails() {
     fetch('http://localhost:8000/emails')
         .then(response => response.json())
         .then(data => {
+            console.log("Fetched emails from backend:", data);
             emails = data
                 .filter(email => email.hasTrackingPixel)
                 .map(email => ({

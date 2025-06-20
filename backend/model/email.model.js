@@ -8,6 +8,7 @@ const emailSchema = new mongoose.Schema({
   sentTime: Date,
   lastUpdate: Date,
   trackingData: Object,
+  hasTrackingPixel: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.model("Email", emailSchema);

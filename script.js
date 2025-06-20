@@ -104,22 +104,21 @@ function waitForComposeBox(callback) {
   }, 500);
 }
 
-// Improved observer for compose windows
+// --- Compose window tracking pixel insertion ---
+// Only observe for new compose windows, not for Sent folder rows
 const composeObserver = new MutationObserver((mutations) => {
   mutations.forEach(mutation => {
     if (mutation.type === 'childList') {
       mutation.addedNodes.forEach(node => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          // Check if this is a new compose window
+          // Only act if this is a new compose window
           const composeArea = node.querySelector('[role="textbox"][aria-label*="Message Body"], [role="textbox"][aria-label*="Compose"], [contenteditable="true"][aria-label*="Message Body"], [contenteditable="true"][aria-label*="Compose"], [data-tooltip*="Message Body"], .Am.Al.editable');
-          
-          if (composeArea) {
-            // Wait a bit for the compose area to be fully initialized
+          if (composeArea && !composeArea.innerHTML.includes('pixel.png')) {
             setTimeout(() => {
               const emailId = generateEmailId();
-              if (insertTrackingPixel(emailId)) {
-                console.log("✅ Tracking pixel inserted in new compose window");
-              }
+              insertTrackingPixel(emailId);
+              // Optionally, you can store the emailId for later use when the email is sent
+              composeArea.setAttribute('data-tracker-email-id', emailId);
             }, 1000);
           }
         }
@@ -407,10 +406,21 @@ function initGmailTracker() {
     // Recipient (for Sent folder)
     let to = "";
     let toName = "";
-    const toSpan = element.querySelector('span[email]');
+    // Try multiple selectors for recipient
+    let toSpan = element.querySelector('span[email], span[email][data-hovercard-id], span.g2');
     if (toSpan) {
-      to = toSpan.getAttribute('email') || "";
+      to = toSpan.getAttribute('email') || toSpan.getAttribute('data-hovercard-id') || "";
       toName = toSpan.textContent.trim();
+    } else {
+      // Try to find in title attribute or fallback
+      const toCell = Array.from(tds).find(td => td.getAttribute('title'));
+      if (toCell) {
+        to = toCell.getAttribute('title');
+        toName = toCell.textContent.trim();
+      }
+    }
+    if (!to) {
+      console.log('Could not extract recipient (to) for element:', element);
     }
 
     // Subject
@@ -431,13 +441,24 @@ function initGmailTracker() {
       id = element.id;
     }
 
-    // Date (last <td> or span.Zt)
+    // Date (try multiple selectors)
     let date = "";
-    const dateSpan = element.querySelector('span.Zt');
+    let dateSpan = element.querySelector('span.Zt, td.xW span, td.xW, td.xT span');
     if (dateSpan) {
       date = dateSpan.textContent.trim();
     } else if (tds.length > 0) {
       date = tds[tds.length - 1].textContent.trim();
+    }
+    if (!date) {
+      console.log('Could not extract date for element:', element);
+    }
+
+    // --- Extract body/snippet ---
+    let body = "";
+    // Gmail often puts the snippet in span.y2
+    const snippetSpan = element.querySelector('span.y2');
+    if (snippetSpan) {
+      body = snippetSpan.textContent.trim();
     }
 
     if (!id || !subject) return null;
@@ -449,7 +470,8 @@ function initGmailTracker() {
       subject,
       date,
       read: !element.classList.contains('zE'), // zE = unread
-      elementId: element.id
+      elementId: element.id,
+      body // <-- include the snippet/body
     };
   }
   const getDeliveryStatus = (element) => {

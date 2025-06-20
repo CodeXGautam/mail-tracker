@@ -1,7 +1,7 @@
 [
   {
-    "timestamp": "2025-06-20T13:04:38.800Z",
-    "emailId": "mailtrack-1750424678786",
+    "timestamp": "2025-06-20T14:04:18.628Z",
+    "emailId": "mailtrack-1750428258539",
     "recipientId": null,
     "ip": "::1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -12,8 +12,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T13:04:38.839Z",
-    "emailId": "mailtrack-1750424678810",
+    "timestamp": "2025-06-20T14:09:42.183Z",
+    "emailId": "mailtrack-1750428582151",
     "recipientId": null,
     "ip": "::1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -24,8 +24,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T13:04:38.983Z",
-    "emailId": "mailtrack-1750424678876",
+    "timestamp": "2025-06-20T14:09:42.200Z",
+    "emailId": "mailtrack-1750428582177",
     "recipientId": null,
     "ip": "::1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -36,32 +36,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T13:11:53.559Z",
-    "emailId": "mailtrack-1750425113509",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T13:11:53.684Z",
-    "emailId": "mailtrack-1750425113562",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T13:11:53.729Z",
-    "emailId": "mailtrack-1750425113619",
+    "timestamp": "2025-06-20T14:09:42.304Z",
+    "emailId": "mailtrack-1750428582247",
     "recipientId": null,
     "ip": "::1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",

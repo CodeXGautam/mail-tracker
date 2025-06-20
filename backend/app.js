@@ -125,10 +125,19 @@ app.delete("/logs", async (req, res) => {
 app.post("/emails", async (req, res) => {
   try {
     const email = req.body;
+    // Allow status-only updates
+    if (email && email.id && email.status && !email.hasTrackingPixel) {
+      await Email.findOneAndUpdate(
+        { id: email.id },
+        { $set: { status: email.status, lastUpdate: email.lastUpdate } }
+      );
+      return res.json({ success: true });
+    }
+    // Only store full emails with tracking pixel
     if (!email || !email.id || !email.hasTrackingPixel) {
       return res.status(400).json({ error: "Missing email data, id, or tracking pixel" });
     }
-    // Upsert (insert or update)
+    // Upsert (insert or update full doc)
     await Email.findOneAndUpdate(
       { id: email.id },
       { $set: email },

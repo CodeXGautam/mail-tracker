@@ -76,7 +76,9 @@ function handlePrepareEmail(email, sendResponse) {
 
       console.log("About to POST to backend /emails", trackedEmail); // Debug log
 
+      console.log("Email body:", trackedEmail.body);
       const hasTrackingPixel = trackedEmail.body && trackedEmail.body.includes('pixel.png');
+      console.log("hasTrackingPixel:", hasTrackingPixel);
       if (hasTrackingPixel) {
         fetch("http://localhost:8000/emails", {
           method: "POST",
