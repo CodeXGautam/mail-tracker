@@ -9,6 +9,9 @@ function initDashboard() {
     checkServerStatus();
     loadData();
     setupFilters();
+    // Attach refresh button listeners for CSP compliance
+    document.getElementById('refresh-emails-btn').addEventListener('click', refreshEmails);
+    document.getElementById('refresh-logs-btn').addEventListener('click', refreshLogs);
     // Auto-refresh every 30 seconds
     setInterval(loadData, 30000);
 }
@@ -37,33 +40,25 @@ function loadData() {
 }
 
 function loadEmails() {
-    // This would typically come from your extension's storage
-    // For now, we'll simulate with some sample data
-    emails = [
-        {
-            id: 'mailtrack-1234567890',
-            subject: 'Meeting Tomorrow',
-            to: 'john@example.com',
-            status: 'read',
-            timestamp: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-            id: 'mailtrack-1234567891',
-            subject: 'Project Update',
-            to: 'sarah@example.com',
-            status: 'delivered',
-            timestamp: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-            id: 'mailtrack-1234567892',
-            subject: 'Invoice #12345',
-            to: 'billing@example.com',
-            status: 'sent',
-            timestamp: new Date(Date.now() - 10800000).toISOString()
-        }
-    ];
-    updateEmailDisplay();
-    updateStats();
+    fetch('http://localhost:8000/emails')
+        .then(response => response.json())
+        .then(data => {
+            emails = data.map(email => ({
+                id: email.id,
+                subject: email.subject,
+                to: email.to,
+                status: email.status,
+                timestamp: email.sentTime || email.timestamp || new Date().toISOString()
+            }));
+            updateEmailDisplay();
+            updateStats();
+        })
+        .catch(error => {
+            console.error('Error loading emails from backend:', error);
+            emails = [];
+            updateEmailDisplay();
+            updateStats();
+        });
 }
 
 function loadLogs() {
@@ -175,6 +170,20 @@ if (typeof browser !== 'undefined') {
             });
             updateEmailDisplay();
             updateStats();
+        }
+        // Handle status updates
+        if (message.type === 'emailStatusUpdate') {
+            // Find the email and update its status
+            const idx = emails.findIndex(e => e.id === message.emailId);
+            if (idx !== -1) {
+                emails[idx].status = message.newStatus;
+                emails[idx].timestamp = new Date().toISOString();
+                updateEmailDisplay();
+                updateStats();
+            } else {
+                // If not found, reload from storage
+                loadEmails();
+            }
         }
     });
 }

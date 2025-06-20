@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
+import Email from "./model/email.model.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,6 +108,34 @@ app.delete("/logs", async (req, res) => {
     res.json({ message: "Logs cleared" });
   } catch {
     res.status(500).json({ error: "Failed to clear logs" });
+  }
+});
+
+// Store or update a sent email
+app.post("/emails", async (req, res) => {
+  try {
+    const email = req.body;
+    if (!email || !email.id) return res.status(400).json({ error: "Missing email data or id" });
+
+    // Upsert (insert or update)
+    await Email.findOneAndUpdate(
+      { id: email.id },
+      { $set: email },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to store email" });
+  }
+});
+
+// Fetch all stored emails
+app.get("/emails", async (req, res) => {
+  try {
+    const emails = await Email.find().sort({ sentTime: -1 }).lean();
+    res.json(emails);
+  } catch {
+    res.status(500).json({ error: "Failed to read emails" });
   }
 });
 

@@ -70,7 +70,16 @@ function handlePrepareEmail(email, sendResponse) {
       extensionState.sentEmails = sentEmails;
       extensionState.lastUpdate = new Date().toISOString();
       saveExtensionState();
-      
+      // POST to backend
+      fetch("http://localhost:8000/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...trackedEmail,
+          status: TRACKING_STATUS.SENT,
+          sentTime: new Date().toISOString()
+        })
+      });
       sendResponse({
         trackingEnabled: true,
         email: trackedEmail

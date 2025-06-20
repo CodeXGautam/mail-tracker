@@ -1,8 +1,14 @@
 import mongoose from "mongoose";
 
-const emailSchema  = new mongoose.Schema(
-    {}
-    ,{timestamps:true}
-    )
+const emailSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  subject: String,
+  to: String,
+  status: String,
+  sentTime: Date,
+  lastUpdate: Date,
+  trackingData: Object,
+  // Add any other fields you want to store
+}, { timestamps: true });
 
-export const Email = mongoose.model('Email', emailSchema)
+export default mongoose.model("Email", emailSchema);

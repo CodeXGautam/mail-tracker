@@ -1,106 +1,7 @@
 [
   {
-    "timestamp": "2025-06-20T05:15:58.532Z",
-    "emailId": "${emailId}",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "PostmanRuntime/7.44.0",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Unknown"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:16:44.722Z",
-    "emailId": "${emailId}",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Chrome"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:33:43.370Z",
-    "emailId": "${emailId}",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:50:26.280Z",
-    "emailId": "${encodeURIComponent(emailId)}",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:58:16.652Z",
-    "emailId": "mailtrack-1750399096635",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referer": "http://127.0.0.1:5500/",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:58:24.219Z",
-    "emailId": "mailtrack-1750399104205",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referer": "http://127.0.0.1:5500/",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T05:59:53.717Z",
-    "emailId": "${encodeURIComponent(emailId)}",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T06:00:49.946Z",
-    "emailId": "mailtrack-1750399249927",
-    "recipientId": null,
-    "ip": "::1",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referer": "http://127.0.0.1:5500/",
-    "country": null,
-    "device": {
-      "mobile": false,
-      "browser": "Mozilla"
-    }
-  },
-  {
-    "timestamp": "2025-06-20T06:02:11.593Z",
-    "emailId": "mailtrack-1750399331531",
+    "timestamp": "2025-06-20T06:24:55.673Z",
+    "emailId": "mailtrack-1750400695627",
     "recipientId": null,
     "ip": "::ffff:127.0.0.1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -111,8 +12,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T06:08:02.996Z",
-    "emailId": "mailtrack-1750399682955",
+    "timestamp": "2025-06-20T06:31:15.302Z",
+    "emailId": "mailtrack-1750401075269",
     "recipientId": null,
     "ip": "::ffff:127.0.0.1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -123,8 +24,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T06:08:03.007Z",
-    "emailId": "mailtrack-1750399682965",
+    "timestamp": "2025-06-20T06:31:15.322Z",
+    "emailId": "mailtrack-1750401075280",
     "recipientId": null,
     "ip": "::ffff:127.0.0.1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -135,8 +36,8 @@
     }
   },
   {
-    "timestamp": "2025-06-20T06:15:50.962Z",
-    "emailId": "mailtrack-1750400150934",
+    "timestamp": "2025-06-20T06:31:15.372Z",
+    "emailId": "mailtrack-1750401075296",
     "recipientId": null,
     "ip": "::ffff:127.0.0.1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
@@ -147,8 +48,80 @@
     }
   },
   {
-    "timestamp": "2025-06-20T06:15:50.971Z",
-    "emailId": "mailtrack-1750400150944",
+    "timestamp": "2025-06-20T06:31:15.388Z",
+    "emailId": "mailtrack-1750401075328",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:41:40.151Z",
+    "emailId": "mailtrack-1750401700128",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:41:40.159Z",
+    "emailId": "mailtrack-1750401700130",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:41:40.171Z",
+    "emailId": "mailtrack-1750401700135",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:41:40.176Z",
+    "emailId": "mailtrack-1750401700138",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:49:00.288Z",
+    "emailId": "mailtrack-1750402140272",
+    "recipientId": null,
+    "ip": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "country": null,
+    "device": {
+      "mobile": false,
+      "browser": "Mozilla"
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:49:00.328Z",
+    "emailId": "mailtrack-1750402140287",
     "recipientId": null,
     "ip": "::ffff:127.0.0.1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
