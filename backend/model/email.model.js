@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const emailSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
+  emailId: { type: String, unique: true },
   subject: String,
   to: String,
   status: String,

@@ -51,7 +51,9 @@ async function checkLogRotation() {
 
 app.get("/pixel.png", async (req, res) => {
   try {
-    const { emailId, recipientId } = req.query;
+    // Decode the emailId to match DB format
+    const emailId = decodeURIComponent(req.query.emailId);
+    const { recipientId } = req.query;
     if (!emailId) return res.status(400).send("Missing emailId parameter");
 
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
@@ -72,6 +74,17 @@ app.get("/pixel.png", async (req, res) => {
     };
 
     console.log("📌 Tracking pixel accessed:", logEntry);
+
+    // --- Update email status to 'read' using emailId ---
+    try {
+      const result = await Email.findOneAndUpdate(
+        { emailId },
+        { $set: { status: "read", lastUpdate: new Date() } }
+      );
+      console.log("DB update for emailId:", emailId, "Result:", result);
+    } catch (err) {
+      console.error("Failed to update email status to 'read' for:", emailId, err);
+    }
 
     await checkLogRotation();
     let currentLogs = [];
@@ -126,20 +139,20 @@ app.post("/emails", async (req, res) => {
   try {
     const email = req.body;
     // Allow status-only updates
-    if (email && email.id && email.status && !email.hasTrackingPixel) {
+    if (email && email.emailId && email.status && !email.hasTrackingPixel) {
       await Email.findOneAndUpdate(
-        { id: email.id },
+        { emailId: email.emailId },
         { $set: { status: email.status, lastUpdate: email.lastUpdate } }
       );
       return res.json({ success: true });
     }
     // Only store full emails with tracking pixel
-    if (!email || !email.id || !email.hasTrackingPixel) {
-      return res.status(400).json({ error: "Missing email data, id, or tracking pixel" });
+    if (!email || !email.id || !email.emailId || !email.hasTrackingPixel) {
+      return res.status(400).json({ error: "Missing email data, id, emailId, or tracking pixel" });
     }
     // Upsert (insert or update full doc)
     await Email.findOneAndUpdate(
-      { id: email.id },
+      { emailId: email.emailId },
       { $set: email },
       { upsert: true, new: true }
     );

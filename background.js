@@ -30,8 +30,8 @@ browser.storage.local.get(['extensionState'], (result) => {
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Background received message:", request.type, request); // Debug log
   switch (request.type) {
-    case 'prepareEmailTracking':
-      handlePrepareEmail(request.email, sendResponse);
+    case 'emailSent':
+      handleEmailSent(request.email, sendResponse);
       return true; // Required for async response
 
     case 'updateEmailStatus':
@@ -52,18 +52,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Handle email preparation
-function handlePrepareEmail(email, sendResponse) {
+// Handle the definitive "email sent" event from the content script
+function handleEmailSent(email, sendResponse) {
   if (!extensionState.trackingEnabled) {
-    sendResponse({ trackingEnabled: false });
+    sendResponse({ success: false, reason: "Tracking is disabled." });
     return;
   }
 
-  const trackedEmail = prepareEmailTracking(email);
+  // The email object from the content script is now the single source of truth.
+  // It is assumed to have the correct pixel and all necessary data.
+  const trackedEmail = email;
   
   browser.storage.local.get(['sentEmails'], (result) => {
     const sentEmails = result.sentEmails || {};
-    sentEmails[trackedEmail.id] = {
+    sentEmails[trackedEmail.id] = { // Use Gmail's thread ID as the primary key for storage
       ...trackedEmail,
       status: TRACKING_STATUS.SENT,
       sentTime: new Date().toISOString()
@@ -74,131 +76,25 @@ function handlePrepareEmail(email, sendResponse) {
       extensionState.lastUpdate = new Date().toISOString();
       saveExtensionState();
 
-      console.log("About to POST to backend /emails", trackedEmail); // Debug log
+      console.log("About to POST to backend /emails with definitive data", trackedEmail);
 
-      console.log("Email body:", trackedEmail.body);
-      const hasTrackingPixel = trackedEmail.body && trackedEmail.body.includes('pixel.png');
-      console.log("hasTrackingPixel:", hasTrackingPixel);
-      if (hasTrackingPixel) {
-        fetch("http://localhost:8000/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...trackedEmail,
-            status: TRACKING_STATUS.SENT,
-            sentTime: new Date().toISOString(),
-            hasTrackingPixel
-          })
-        });
-      }
+      fetch("http://localhost:8000/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...trackedEmail,
+          status: TRACKING_STATUS.SENT,
+          sentTime: new Date().toISOString(),
+          // hasTrackingPixel is already set to true by the content script
+        })
+      });
 
       sendResponse({
-        trackingEnabled: true,
+        success: true,
         email: trackedEmail
       });
     });
   });
-}
-
-// Prepare email for tracking
-function prepareEmailTracking(email) {
-  if (!email.isSent) return email;
-  
-  const trackingData = {
-    pixelUrl: generateTrackingPixelUrl(email.id),
-    links: []
-  };
-
-  // Add tracking pixel
-  email.body = addTrackingPixel(email.body, trackingData.pixelUrl);
-  
-  // Track links if email is HTML
-  if (email.isHtml) {
-    const { links, updatedBody } = processLinks(email.body, email.id);
-    trackingData.links = links;
-    email.body = updatedBody;
-  }
-
-  return {
-    ...email,
-    trackingData,
-    originalBody: email.body // Store original before modifications
-  };
-}
-
-// Generate tracking pixel URL
-function generateTrackingPixelUrl(emailId) {
-  const serverUrl = "http://localhost:4000";
-  const pixelUrl = new URL(`${serverUrl}/pixel.png`);
-  
-  pixelUrl.searchParams.append('emailId', emailId);
-  pixelUrl.searchParams.append('time', Date.now());
-  pixelUrl.searchParams.append('source', 'firefox_extension');
-  
-  return pixelUrl.toString();
-}
-
-// Add tracking pixel to email body
-function addTrackingPixel(body, pixelUrl) {
-  const pixelHtml = `
-    <!-- Email Tracking Pixel -->
-    <img src="${pixelUrl}" 
-         width="1" height="1" 
-         style="display:none;border:0;" 
-         alt="" aria-hidden="true">
-  `;
-
-  if (typeof body === 'string') {
-    if (body.includes('</body>')) {
-      return body.replace('</body>', `${pixelHtml}</body>`);
-    }
-    return `${body}${pixelHtml}`;
-  }
-  return body;
-}
-
-// Process and track links in email
-function processLinks(body, emailId) {
-  const linkRegex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/g;
-  const links = [];
-  let updatedBody = body;
-  let match;
-
-  while ((match = linkRegex.exec(body)) !== null) {
-    const [fullMatch, quote, originalUrl] = match;
-    const trackedUrl = generateTrackedLinkUrl(originalUrl, emailId);
-    
-    links.push({
-      originalUrl,
-      trackedUrl,
-      clickCount: 0
-    });
-
-    const trackedHtml = fullMatch.replace(
-      `href=${quote}${originalUrl}${quote}`,
-      `href="${trackedUrl}"`
-    );
-
-    updatedBody = updatedBody.replace(fullMatch, trackedHtml);
-  }
-
-  return {
-    links,
-    updatedBody
-  };
-}
-
-// Generate tracked link URL
-function generateTrackedLinkUrl(originalUrl, emailId) {
-  const serverUrl = "http://localhost:4000";
-  const trackedUrl = new URL(`${serverUrl}/redirect`);
-  
-  trackedUrl.searchParams.append('to', encodeURIComponent(originalUrl));
-  trackedUrl.searchParams.append('emailId', emailId);
-  trackedUrl.searchParams.append('linkId', generateId());
-  trackedUrl.searchParams.append('time', Date.now());
-  
-  return trackedUrl.toString();
 }
 
 // Handle status updates
