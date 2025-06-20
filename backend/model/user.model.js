@@ -71,4 +71,4 @@ userSchema.virtual('emailCount', {
 userSchema.index({ email: 1 });
 userSchema.index({ apiKey: 1 });
 
-export const User = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);
