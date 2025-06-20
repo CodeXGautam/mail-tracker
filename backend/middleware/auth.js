@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../model/user.model.js';
+import  User  from '../model/user.model.js';
 import mongoose from 'mongoose';
 
 // Middleware to authenticate user via JWT token
