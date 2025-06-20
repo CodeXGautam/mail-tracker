@@ -15,7 +15,6 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
     "dev": "nodemon -r dotenv/config --experimental-json-modules server.js"
   },
   "dependencies": {
