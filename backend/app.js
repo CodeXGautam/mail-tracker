@@ -5,6 +5,10 @@ import { fileURLToPath } from "url";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import Email from "./model/email.model.js";
+import authRoutes from "./routes/auth.js";
+import { authenticateToken, authenticateApiKey } from "./middleware/auth.js";
+import User from "./model/user.model.js";
+import crypto from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +38,67 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected"
   });
+});
+
+// Auth routes
+app.use("/auth", authRoutes);
+
+// Auto-create user endpoint for extension
+app.post("/auth/auto-create", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    
+    if (user) {
+      // User exists, return their API key
+      return res.json({
+        success: true,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          apiKey: user.apiKey
+        },
+        message: "User already exists"
+      });
+    }
+
+    // Create new user automatically
+    user = new User({
+      email,
+      name: name || email.split('@')[0], // Use email prefix as name if not provided
+      password: crypto.randomBytes(32).toString('hex'), // Random password since user won't login manually
+      isActive: true,
+      trackingEnabled: true
+    });
+
+    // Generate API key
+    user.generateApiKey();
+
+    await user.save();
+
+    console.log(`✅ Auto-created user: ${email}`);
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        apiKey: user.apiKey
+      },
+      message: "User created successfully"
+    });
+  } catch (error) {
+    console.error("Auto-create user error:", error);
+    res.status(500).json({ error: "Failed to create user" });
+  }
 });
 
 const LOG_FILE = path.join(__dirname, "logs.json");
@@ -95,7 +160,17 @@ app.get("/pixel.png", async (req, res) => {
       if (mongoose.connection.readyState) {
         const result = await Email.findOneAndUpdate(
           { emailId },
-          { $set: { status: "read", lastUpdate: new Date() } }
+          { 
+            $set: { 
+              status: "read", 
+              lastUpdate: new Date(),
+              readTime: new Date(),
+              "trackingData.opens": { $inc: 1 },
+              "trackingData.lastOpen": new Date(),
+              userAgent,
+              ipAddress: ip
+            } 
+          }
         );
         console.log("DB update for emailId:", emailId, "Result:", result);
       } else {
@@ -154,7 +229,7 @@ app.delete("/logs", async (req, res) => {
 });
 
 // Store or update a sent email
-app.post("/emails", async (req, res) => {
+app.post("/emails", authenticateApiKey, async (req, res) => {
   try {
     const email = req.body;
     
@@ -174,10 +249,13 @@ app.post("/emails", async (req, res) => {
       return res.json({ success: true, message: "Stored in logs (DB unavailable)" });
     }
     
+    // Add user ID to email data
+    email.userId = req.user._id;
+    
     // Allow status-only updates
     if (email && email.emailId && email.status && !email.hasTrackingPixel) {
       await Email.findOneAndUpdate(
-        { emailId: email.emailId },
+        { emailId: email.emailId, userId: req.user._id },
         { $set: { status: email.status, lastUpdate: email.lastUpdate } }
       );
       return res.json({ success: true });
@@ -188,7 +266,7 @@ app.post("/emails", async (req, res) => {
     }
     // Upsert (insert or update full doc)
     await Email.findOneAndUpdate(
-      { emailId: email.emailId },
+      { emailId: email.emailId, userId: req.user._id },
       { $set: email },
       { upsert: true, new: true }
     );
@@ -199,8 +277,8 @@ app.post("/emails", async (req, res) => {
   }
 });
 
-// Fetch all stored emails
-app.get("/emails", async (req, res) => {
+// Fetch all stored emails for authenticated user
+app.get("/emails", authenticateApiKey, async (req, res) => {
   try {
     // Check if database is connected
     if (!mongoose.connection.readyState) {
@@ -215,7 +293,7 @@ app.get("/emails", async (req, res) => {
       return res.json(logs);
     }
     
-    const emails = await Email.find().sort({ sentTime: -1 }).lean();
+    const emails = await Email.find({ userId: req.user._id }).sort({ sentTime: -1 }).lean();
     res.json(emails);
   } catch (err) {
     console.error("Error fetching emails:", err);

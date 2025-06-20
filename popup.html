@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mail Tracker</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin: 0;
+    }
+    
+    .container {
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    
+    .status {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .status-icon {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    
+    .status-text {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .user-info {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 12px;
+    }
+    
+    .btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .loading {
+      display: none;
+    }
+    
+    .error {
+      color: #ff6b6b;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    .success {
+      color: #51cf66;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">📧 Mail Tracker</div>
+    
+    <div class="status">
+      <div class="status-icon" id="statusIcon">⏳</div>
+      <div class="status-text" id="statusText">Checking status...</div>
+    </div>
+    
+    <div class="user-info" id="userInfo" style="display: none;">
+      <div>Email: <span id="userEmail">-</span></div>
+      <div>Status: <span id="userStatus">-</span></div>
+    </div>
+    
+    <button class="btn" id="initBtn" onclick="initializeUser()">
+      <span class="btn-text">Initialize User</span>
+      <span class="loading">🔄 Initializing...</span>
+    </button>
+    
+    <div id="message"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 

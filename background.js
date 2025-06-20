@@ -13,7 +13,10 @@ const TRACKING_STATUS = {
 let extensionState = {
   sentEmails: {},
   trackingEnabled: true,
-  lastUpdate: null
+  lastUpdate: null,
+  apiKey: null,
+  userToken: null,
+  isInitialized: false
 };
 
 // Load saved state from storage
@@ -24,7 +27,79 @@ browser.storage.local.get(['extensionState'], (result) => {
       ...result.extensionState
     };
   }
+  // Auto-initialize user if not already done
+  if (!extensionState.isInitialized) {
+    initializeUser();
+  }
 });
+
+// Auto-initialize user with Gmail email
+async function initializeUser() {
+  try {
+    console.log("🔄 Initializing user...");
+    
+    // Get the current tab to access Gmail
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+    
+    if (currentTab && currentTab.url && currentTab.url.includes('mail.google.com')) {
+      // Execute script to get user's Gmail email
+      const results = await browser.tabs.executeScript(currentTab.id, {
+        code: `
+          // Try to get Gmail user email
+          const emailElement = document.querySelector('[data-email]') || 
+                              document.querySelector('[aria-label*="@"]') ||
+                              document.querySelector('.gb_d');
+          const email = emailElement ? 
+            (emailElement.getAttribute('data-email') || 
+             emailElement.getAttribute('aria-label') || 
+             emailElement.textContent) : null;
+          
+          // Fallback: try to get from page title or other elements
+          if (!email) {
+            const titleEmail = document.title.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (titleEmail) return titleEmail[0];
+          }
+          
+          email;
+        `
+      });
+      
+      const userEmail = results[0];
+      
+      if (userEmail && userEmail.includes('@')) {
+        console.log("📧 Found Gmail user:", userEmail);
+        
+        // Auto-create user account
+        const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            email: userEmail,
+            name: userEmail.split('@')[0]
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          extensionState.apiKey = data.user.apiKey;
+          extensionState.isInitialized = true;
+          saveExtensionState();
+          console.log("✅ User auto-created and authenticated:", data.user.email);
+        } else {
+          console.error("❌ Failed to auto-create user:", data.error);
+        }
+      } else {
+        console.log("⚠️ Could not detect Gmail user email");
+      }
+    } else {
+      console.log("⚠️ Not on Gmail, skipping auto-initialization");
+    }
+  } catch (error) {
+    console.error("❌ Auto-initialization error:", error);
+  }
+}
 
 // Main message handler
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -33,6 +108,31 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'emailSent':
       handleEmailSent(request.email, sendResponse);
       return true; // Required for async response
+
+    case 'login':
+      authenticateUser(request.email, request.password)
+        .then(result => sendResponse(result));
+      return true;
+
+    case 'register':
+      registerUser(request.email, request.name, request.password)
+        .then(result => sendResponse(result));
+      return true;
+
+    case 'logout':
+      extensionState.apiKey = null;
+      extensionState.userToken = null;
+      saveExtensionState();
+      sendResponse({ success: true });
+      break;
+
+    case 'getAuthStatus':
+      sendResponse({ 
+        isAuthenticated: !!extensionState.apiKey,
+        isInitialized: extensionState.isInitialized,
+        user: extensionState.apiKey ? { apiKey: extensionState.apiKey } : null
+      });
+      break;
 
     case 'updateEmailStatus':
       handleStatusUpdate(request.emailId, request.status, request.details);
@@ -47,15 +147,40 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       saveExtensionState();
       break;
 
+    case 'initializeUser':
+      initializeUser().then(() => {
+        sendResponse({ 
+          success: !!extensionState.apiKey,
+          isAuthenticated: !!extensionState.apiKey,
+          user: extensionState.apiKey ? { apiKey: extensionState.apiKey } : null
+        });
+      });
+      return true;
+
     default:
       console.warn('Unknown message type:', request.type);
   }
 });
 
 // Handle the definitive "email sent" event from the content script
-function handleEmailSent(email, sendResponse) {
+async function handleEmailSent(email, sendResponse) {
   if (!extensionState.trackingEnabled) {
     sendResponse({ success: false, reason: "Tracking is disabled." });
+    return;
+  }
+
+  // Check if user is initialized, if not, try to initialize
+  if (!extensionState.isInitialized) {
+    console.log("🔄 User not initialized, attempting auto-initialization...");
+    await initializeUser();
+  }
+
+  // Check if user is authenticated
+  if (!extensionState.apiKey) {
+    sendResponse({ 
+      success: false, 
+      reason: "Could not authenticate user. Please make sure you're on Gmail and try again." 
+    });
     return;
   }
 
@@ -80,7 +205,10 @@ function handleEmailSent(email, sendResponse) {
 
       fetch("https://mail-tracker-k1hl.onrender.com/emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": extensionState.apiKey
+        },
         body: JSON.stringify({
           ...trackedEmail,
           status: TRACKING_STATUS.SENT,
@@ -228,3 +356,50 @@ browser.runtime.onInstalled.addListener(() => {
     saveExtensionState();
   });
 });
+
+// Authentication functions
+async function authenticateUser(email, password) {
+  try {
+    const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      extensionState.apiKey = data.user.apiKey;
+      extensionState.userToken = data.token;
+      saveExtensionState();
+      return { success: true, user: data.user };
+    } else {
+      return { success: false, error: data.error };
+    }
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
+
+async function registerUser(email, name, password) {
+  try {
+    const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name, password })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      extensionState.apiKey = data.user.apiKey;
+      extensionState.userToken = data.token;
+      saveExtensionState();
+      return { success: true, user: data.user };
+    } else {
+      return { success: false, error: data.error };
+    }
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
