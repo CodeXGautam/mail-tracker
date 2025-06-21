@@ -370,14 +370,28 @@ function handleStatusUpdate(emailId, status, details = {}) {
       
       showStatusNotification(emailId, status, details);
 
+      // Send status update to backend with API key
       fetch("https://mail-tracker-k1hl.onrender.com/emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": extensionState.apiKey
+        },
         body: JSON.stringify({
-          id: emailId,
-          status,
+          emailId: emailId,
+          status: status,
           lastUpdate: new Date().toISOString()
         })
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error("❌ Status update failed:", response.status, response.statusText);
+        } else {
+          console.log("✅ Status updated successfully:", status);
+        }
+      })
+      .catch(error => {
+        console.error("❌ Network error updating status:", error);
       });
     });
   });

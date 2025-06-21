@@ -58,6 +58,16 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Test pixel endpoint (for debugging)
+app.get("/test-pixel", (req, res) => {
+  console.log("🧪 Test pixel endpoint accessed");
+  res.json({ 
+    message: "Test pixel endpoint working",
+    timestamp: new Date().toISOString(),
+    query: req.query
+  });
+});
+
 // Auth routes
 app.use("/auth", authRoutes);
 
@@ -183,10 +193,18 @@ async function initLogFile() {
 
 app.get("/pixel.png", async (req, res) => {
   try {
+    console.log("🔥 Pixel endpoint accessed with query:", req.query);
+    
     // Decode the emailId to match DB format
     const emailId = decodeURIComponent(req.query.emailId);
     const { recipientId } = req.query;
-    if (!emailId) return res.status(400).send("Missing emailId parameter");
+    
+    if (!emailId) {
+      console.error("❌ Missing emailId parameter");
+      return res.status(400).send("Missing emailId parameter");
+    }
+
+    console.log("📧 Processing pixel for emailId:", emailId);
 
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const userAgent = req.headers["user-agent"];
@@ -210,7 +228,10 @@ app.get("/pixel.png", async (req, res) => {
     // --- Update email status to 'read' using emailId ---
     try {
       if (mongoose.connection.readyState) {
-        const result = await Email.findOneAndUpdate(
+        console.log("🔍 Searching for email with emailId:", emailId);
+        
+        // First, try to find the email without userId filter (for backward compatibility)
+        let result = await Email.findOneAndUpdate(
           { emailId },
           { 
             $set: { 
@@ -222,16 +243,32 @@ app.get("/pixel.png", async (req, res) => {
               userAgent,
               ipAddress: ip
             } 
-          }
+          },
+          { new: true }
         );
-        console.log("DB update for emailId:", emailId, "Result:", result);
+        
+        if (!result) {
+          console.log("⚠️ Email not found with emailId:", emailId);
+          console.log("🔍 Checking if email exists in database...");
+          
+          // Check if any email with this emailId exists
+          const existingEmail = await Email.findOne({ emailId });
+          if (existingEmail) {
+            console.log("✅ Email found but update failed:", existingEmail._id);
+          } else {
+            console.log("❌ No email found with emailId:", emailId);
+          }
+        } else {
+          console.log("✅ DB update successful for emailId:", emailId, "Email ID:", result._id);
+        }
       } else {
         console.log("⚠️ Database not connected, skipping DB update for emailId:", emailId);
       }
     } catch (err) {
-      console.error("Failed to update email status to 'read' for:", emailId, err);
+      console.error("❌ Failed to update email status to 'read' for:", emailId, err);
     }
 
+    // Always log the pixel access, even if DB update fails
     await checkLogRotation();
     let currentLogs = [];
     try {
@@ -242,7 +279,10 @@ app.get("/pixel.png", async (req, res) => {
     }
     currentLogs.push(logEntry);
     await fs.writeFile(LOG_FILE, JSON.stringify(currentLogs, null, 2));
+    
+    console.log("✅ Pixel access logged successfully");
 
+    // Send the pixel response
     res.set({
       "Content-Type": "image/gif",
       "Content-Length": PIXEL.length,
@@ -251,8 +291,11 @@ app.get("/pixel.png", async (req, res) => {
       Expires: "0",
     });
     res.end(PIXEL);
+    
+    console.log("✅ Pixel response sent successfully");
   } catch (error) {
     console.error("🔥 Error in tracking endpoint:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).send("Internal Server Error");
   }
 });

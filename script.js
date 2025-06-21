@@ -3,6 +3,13 @@ console.log("Mail Tracker script.js loaded");
 // Map to store Gmail thread/message ID to generated emailId
 const sentEmailIds = new Map();
 
+function generateEmailId() {
+  // Create a shorter, URL-safe email ID
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `mt-${timestamp}-${random}`;
+}
+
 function insertTrackingPixel(emailId) {
   // Failsafe: if emailId looks like a Gmail ID, try to look up the mapped value
   if (emailId && emailId.startsWith(':')) {
@@ -12,10 +19,19 @@ function insertTrackingPixel(emailId) {
       emailId = mapped;
     }
   }
-  console.log("insertTrackingPixel called with emailId:", emailId);
+  
+  // Validate emailId
+  if (!emailId || emailId.length > 100) {
+    console.error('❌ Invalid emailId:', emailId);
+    return false;
+  }
+  
+  console.log("📩 insertTrackingPixel called with emailId:", emailId);
+  
+  // Create a more robust pixel URL
   const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
   
-  // Create a more email-client-friendly tracking pixel
+  // Create a more email-client-friendly tracking pixel with better compatibility
   const pixelTag = `<img src="${pixelUrl}" width="1" height="1" style="display:none; opacity:0; position:absolute; left:-9999px; top:-9999px;" alt="" border="0" />`;
 
   // Try multiple selectors for Gmail's compose area
@@ -25,7 +41,8 @@ function insertTrackingPixel(emailId) {
     '[contenteditable="true"][aria-label*="Message Body"]',
     '[contenteditable="true"][aria-label*="Compose"]',
     '[data-tooltip*="Message Body"]',
-    '.Am.Al.editable'
+    '.Am.Al.editable',
+    '[contenteditable="true"]'
   ];
 
   let composeArea = null;
@@ -37,16 +54,27 @@ function insertTrackingPixel(emailId) {
     }
   }
 
-  if (composeArea && !composeArea.innerHTML.includes(pixelUrl)) {
+  if (composeArea) {
+    // Check if pixel already exists
+    if (composeArea.innerHTML.includes(pixelUrl)) {
+      console.log("⚠️ Pixel already exists in compose area");
+      return true;
+    }
+    
     // Insert pixel at the end of the content
     composeArea.innerHTML += pixelTag;
-    console.log("📩 Pixel inserted into email body:", pixelUrl);
+    console.log("✅ Pixel inserted into email body:", pixelUrl);
     console.log("📝 Compose area content length:", composeArea.innerHTML.length);
     console.log("🔍 Pixel HTML:", pixelTag);
-    return true;
-  } else if (composeArea) {
-    console.log("⚠️ Compose area found but pixel already exists or insertion failed");
-    return false;
+    
+    // Verify insertion
+    if (composeArea.innerHTML.includes(pixelUrl)) {
+      console.log("✅ Pixel insertion verified");
+      return true;
+    } else {
+      console.error("❌ Pixel insertion failed - not found in content");
+      return false;
+    }
   } else {
     console.log("❌ No compose area found with any selector");
     console.log("🔍 Available elements with role='textbox':", document.querySelectorAll('[role="textbox"]').length);
@@ -64,6 +92,42 @@ window.testPixelInsertion = function() {
   const result = insertTrackingPixel(emailId);
   console.log("🧪 Test result:", result);
   return result;
+};
+
+// Debug function to manually insert pixel with specific emailId
+window.insertPixelManually = function(emailId) {
+  console.log("🔧 Manually inserting pixel with emailId:", emailId);
+  const result = insertTrackingPixel(emailId);
+  console.log("🔧 Manual insertion result:", result);
+  return result;
+};
+
+// Debug function to show current compose area content
+window.showComposeContent = function() {
+  const composeSelectors = [
+    '[role="textbox"][aria-label*="Message Body"]',
+    '[role="textbox"][aria-label*="Compose"]',
+    '[contenteditable="true"][aria-label*="Message Body"]',
+    '[contenteditable="true"][aria-label*="Compose"]',
+    '[data-tooltip*="Message Body"]',
+    '.Am.Al.editable',
+    '[contenteditable="true"]'
+  ];
+
+  let composeArea = null;
+  for (const selector of composeSelectors) {
+    composeArea = document.querySelector(selector);
+    if (composeArea) {
+      console.log("🎯 Found compose area with selector:", selector);
+      console.log("📝 Compose area content:", composeArea.innerHTML);
+      console.log("📏 Content length:", composeArea.innerHTML.length);
+      console.log("🔍 Contains pixel:", composeArea.innerHTML.includes('pixel.png'));
+      return composeArea;
+    }
+  }
+  
+  console.log("❌ No compose area found");
+  return null;
 };
 
 // Debug function to test pixel tracking by simulating a request
@@ -116,11 +180,6 @@ window.showComposeAreas = function() {
     });
   });
 };
-
-function generateEmailId() {
-  // Optionally add user ID logic here
-  return `mailtrack-${Date.now()}`;
-}
 
 function waitForComposeBox(callback) {
   const interval = setInterval(() => {
@@ -240,28 +299,42 @@ function attachListenerToNewSendButton(sendButton) {
         const emailId = getOrCreateEmailId(threadId);
         
         // Ensure pixel is in the body before capturing it
-        if (!composeArea.innerHTML.includes('pixel.png')) {
-            insertTrackingPixel(emailId);
+        console.log("🔍 Checking for existing pixel in compose area...");
+        let pixelInserted = false;
+        
+        if (composeArea.innerHTML.includes('pixel.png')) {
+            console.log("✅ Pixel already exists in compose area");
+            pixelInserted = true;
+        } else {
+            console.log("📩 Inserting pixel into compose area...");
+            pixelInserted = insertTrackingPixel(emailId);
         }
+        
+        // Wait a moment for the pixel to be properly inserted
+        if (pixelInserted) {
+            setTimeout(() => {
+                const emailData = {
+                    id: threadId,
+                    emailId: emailId,
+                    to: toRecipients,
+                    subject: subject,
+                    body: composeArea.innerHTML,
+                    isSent: true,
+                    folder: 'Sent',
+                    deliveryStatus: 'sent',
+                    hasTrackingPixel: true
+                };
 
-        const emailData = {
-            id: threadId,
-            emailId: emailId,
-            to: toRecipients,
-            subject: subject,
-            body: composeArea.innerHTML,
-            isSent: true,
-            folder: 'Sent',
-            deliveryStatus: 'sent',
-            hasTrackingPixel: true // We are ensuring it's there
-        };
-
-        // Send the complete data package to the background script
-        console.log('Sending emailSent message with complete data:', emailData);
-        browser.runtime.sendMessage({
-            type: "emailSent",
-            email: emailData
-        });
+                // Send the complete data package to the background script
+                console.log('📤 Sending emailSent message with complete data:', emailData);
+                browser.runtime.sendMessage({
+                    type: "emailSent",
+                    email: emailData
+                });
+            }, 100); // Small delay to ensure pixel is inserted
+        } else {
+            console.error("❌ Failed to insert tracking pixel, email will not be tracked");
+        }
 
     }, { capture: true });
 }

@@ -44,6 +44,12 @@
             font-size: 1.1em;
         }
 
+        .last-updated {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -302,6 +308,13 @@
             background: #5a6fd8;
         }
 
+        .loading {
+            padding: 40px;
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -323,6 +336,7 @@
         <div class="header">
             <h1>📧 Mail Tracker Dashboard</h1>
             <p>Real-time email tracking and analytics</p>
+            <div class="last-updated" id="last-updated">Last updated: Never</div>
         </div>
 
         <div class="stats-grid">
