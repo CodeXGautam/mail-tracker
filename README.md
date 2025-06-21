@@ -98,7 +98,6 @@ Firefox extension/
 │   ├── icon48.png
 │   ├── icon128.png
 │   └── dashboard.png      # Dashboard screenshot
-├── generate-icons.html    # Tool to generate icons
 └── README.md              # Project documentation
 ```
 
