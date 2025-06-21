@@ -60,7 +60,7 @@ app.get("/health", (req, res) => {
 
 // Test pixel endpoint (for debugging)
 app.get("/test-pixel", (req, res) => {
-  console.log("🧪 Test pixel endpoint accessed");
+  console.log("Test pixel endpoint accessed");
   res.json({ 
     message: "Test pixel endpoint working",
     timestamp: new Date().toISOString(),
@@ -76,16 +76,16 @@ app.post("/auth/auto-create", async (req, res) => {
   try {
     const { email, name } = req.body;
     
-    console.log("🔧 Auto-create request received:", { email, name });
+    console.log("Auto-create request received:", { email, name });
     
     if (!email) {
-      console.log("❌ No email provided");
+      console.log("No email provided");
       return res.status(400).json({ error: "Email is required" });
     }
 
     // Check if database is connected
     if (!mongoose.connection.readyState) {
-      console.log("⚠️ Database not connected, using fallback mechanism");
+      console.log("Database not connected, using fallback mechanism");
       
       // Generate a temporary API key for the session
       const tempApiKey = crypto.randomBytes(32).toString('hex');
@@ -111,7 +111,7 @@ app.post("/auth/auto-create", async (req, res) => {
       currentLogs.push(tempUser);
       await fs.writeFile(LOG_FILE, JSON.stringify(currentLogs, null, 2));
       
-      console.log(`✅ Temporary user created (DB offline): ${email}`);
+      console.log(`Temporary user created (DB offline): ${email}`);
       
       return res.status(201).json({
         success: true,
@@ -129,7 +129,7 @@ app.post("/auth/auto-create", async (req, res) => {
     let user = await User.findOne({ email });
     
     if (user) {
-      console.log("✅ User already exists:", user.email);
+      console.log("User already exists:", user.email);
       // User exists, return their API key
       return res.json({
         success: true,
@@ -143,7 +143,7 @@ app.post("/auth/auto-create", async (req, res) => {
       });
     }
 
-    console.log("🆕 Creating new user...");
+    console.log("Creating new user...");
     
     // Create new user automatically (simplified version)
     user = new User({
@@ -159,7 +159,7 @@ app.post("/auth/auto-create", async (req, res) => {
 
     await user.save();
 
-    console.log(`✅ Auto-created user: ${email}`);
+    console.log(`Auto-created user: ${email}`);
 
     res.status(201).json({
       success: true,
@@ -172,7 +172,7 @@ app.post("/auth/auto-create", async (req, res) => {
       message: "User created successfully"
     });
   } catch (error) {
-    console.error("❌ Auto-create user error:", error);
+    console.error("Auto-create user error:", error);
     console.error("Error stack:", error.stack);
     res.status(500).json({ error: "Failed to create user", details: error.message });
   }
@@ -193,18 +193,18 @@ async function initLogFile() {
 
 app.get("/pixel.png", async (req, res) => {
   try {
-    console.log("🔥 Pixel endpoint accessed with query:", req.query);
+    console.log("Pixel endpoint accessed with query:", req.query);
     
     // Decode the emailId to match DB format
     const emailId = decodeURIComponent(req.query.emailId);
     const { recipientId } = req.query;
     
     if (!emailId) {
-      console.error("❌ Missing emailId parameter");
+      console.error("Missing emailId parameter");
       return res.status(400).send("Missing emailId parameter");
     }
 
-    console.log("📧 Processing pixel for emailId:", emailId);
+    console.log("Processing pixel for emailId:", emailId);
 
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const userAgent = req.headers["user-agent"];
@@ -223,7 +223,7 @@ app.get("/pixel.png", async (req, res) => {
       },
     };
 
-    console.log("📌 Tracking pixel accessed:", logEntry);
+    console.log("Tracking pixel accessed:", logEntry);
 
     // --- Check if this is the sender accessing their own email ---
     let isSenderAccess = false;
@@ -234,32 +234,32 @@ app.get("/pixel.png", async (req, res) => {
         if (email) {
           // Check if the IP matches the sender's IP (from when email was sent)
           if (email.senderIpAddress && email.senderIpAddress === ip) {
-            console.log("🚫 Sender accessing their own email - IP match");
+            console.log("Sender accessing their own email - IP match");
             isSenderAccess = true;
           }
           
           // Check if user agent matches (sender likely uses same browser)
           if (!isSenderAccess && email.userAgent && email.userAgent === userAgent) {
-            console.log("🚫 Sender accessing their own email - User agent match");
+            console.log("Sender accessing their own email - User agent match");
             isSenderAccess = true;
           }
           
           // Additional check: if it's a local/development IP
           if (!isSenderAccess && (ip === "::1" || ip === "127.0.0.1" || ip === "::ffff:127.0.0.1")) {
-            console.log("🚫 Local/development access detected - not marking as read");
+            console.log("Local/development access detected - not marking as read");
             isSenderAccess = true;
           }
           
           // Additional check: if referer contains Gmail (sender viewing their own sent email)
           const referer = req.headers["referer"];
           if (!isSenderAccess && referer && referer.includes("mail.google.com")) {
-            console.log("🚫 Gmail referer detected - likely sender viewing own email");
+            console.log("Gmail referer detected - likely sender viewing own email");
             isSenderAccess = true;
           }
         }
       }
     } catch (err) {
-      console.error("❌ Error checking sender access:", err);
+      console.error("Error checking sender access:", err);
       // If we can't determine, assume it's not the sender to be safe
       isSenderAccess = false;
     }
@@ -268,7 +268,7 @@ app.get("/pixel.png", async (req, res) => {
     if (!isSenderAccess) {
       try {
         if (mongoose.connection.readyState) {
-          console.log("🔍 Searching for email with emailId:", emailId);
+          console.log("Searching for email with emailId:", emailId);
           
           // First, try to find the email without userId filter (for backward compatibility)
           let result = await Email.findOneAndUpdate(
@@ -288,13 +288,13 @@ app.get("/pixel.png", async (req, res) => {
           );
           
           if (!result) {
-            console.log("⚠️ Email not found with emailId:", emailId);
-            console.log("🔍 Checking if email exists in database...");
+            console.log("Email not found with emailId:", emailId);
+            console.log("Checking if email exists in database...");
             
             // Check if any email with this emailId exists
             const existingEmail = await Email.findOne({ emailId });
             if (existingEmail) {
-              console.log("✅ Email found but update failed:", existingEmail._id);
+              console.log("Email found but update failed:", existingEmail._id);
               
               // Try a simpler update without $inc
               try {
@@ -312,22 +312,22 @@ app.get("/pixel.png", async (req, res) => {
                   { new: true }
                 );
                 if (simpleUpdate) {
-                  console.log("✅ Simple update successful for emailId:", emailId);
+                  console.log("Simple update successful for emailId:", emailId);
                 }
               } catch (simpleErr) {
-                console.error("❌ Simple update also failed:", simpleErr.message);
+                console.error("Simple update also failed:", simpleErr.message);
               }
             } else {
-              console.log("❌ No email found with emailId:", emailId);
+              console.log("No email found with emailId:", emailId);
             }
           } else {
-            console.log("✅ DB update successful for emailId:", emailId, "Email ID:", result._id);
+            console.log("DB update successful for emailId:", emailId, "Email ID:", result._id);
           }
         } else {
-          console.log("⚠️ Database not connected, skipping DB update for emailId:", emailId);
+          console.log("Database not connected, skipping DB update for emailId:", emailId);
         }
       } catch (err) {
-        console.error("❌ Failed to update email status to 'read' for:", emailId, err);
+        console.error("Failed to update email status to 'read' for:", emailId, err);
         
         // Try a fallback update without complex operations
         try {
@@ -341,14 +341,14 @@ app.get("/pixel.png", async (req, res) => {
             }
           );
           if (fallbackUpdate) {
-            console.log("✅ Fallback update successful for emailId:", emailId);
+            console.log("Fallback update successful for emailId:", emailId);
           }
         } catch (fallbackErr) {
-          console.error("❌ Fallback update also failed:", fallbackErr.message);
+          console.error("Fallback update also failed:", fallbackErr.message);
         }
       }
     } else {
-      console.log("📝 Logging pixel access but not marking as read (sender access)");
+      console.log("Logging pixel access but not marking as read (sender access)");
     }
 
     // Always log the pixel access, even if DB update fails
@@ -357,13 +357,13 @@ app.get("/pixel.png", async (req, res) => {
     try {
       currentLogs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
     } catch (err) {
-      console.warn("🔄 Resetting corrupted log file.");
+      console.warn("Resetting corrupted log file.");
       currentLogs = [];
     }
     currentLogs.push(logEntry);
     await fs.writeFile(LOG_FILE, JSON.stringify(currentLogs, null, 2));
     
-    console.log("✅ Pixel access logged successfully");
+    console.log("Pixel access logged successfully");
 
     // Send the pixel response
     res.set({
@@ -375,9 +375,9 @@ app.get("/pixel.png", async (req, res) => {
     });
     res.end(PIXEL);
     
-    console.log("✅ Pixel response sent successfully");
+    console.log("Pixel response sent successfully");
   } catch (error) {
-    console.error("🔥 Error in tracking endpoint:", error);
+    console.error("Error in tracking endpoint:", error);
     console.error("Error stack:", error.stack);
     res.status(500).send("Internal Server Error");
   }
@@ -413,7 +413,7 @@ app.post("/emails", authenticateApiKey, async (req, res) => {
     
     // Check if database is connected
     if (!mongoose.connection.readyState) {
-      console.log("⚠️ Database not connected, storing in logs only");
+      console.log("Database not connected, storing in logs only");
       // Store in logs as fallback
       await checkLogRotation();
       let currentLogs = [];
@@ -464,7 +464,7 @@ app.get("/emails", authenticateApiKey, async (req, res) => {
   try {
     // Check if database is connected
     if (!mongoose.connection.readyState) {
-      console.log("⚠️ Database not connected, returning logs only");
+      console.log("Database not connected, returning logs only");
       // Return logs as fallback
       let logs = [];
       try {
@@ -494,7 +494,7 @@ app.delete("/emails", async (req, res) => {
 
 async function startServer() {
   await initLogFile();
-  console.log(`📝 Logs stored at: ${LOG_FILE}`);
+  console.log(`Logs stored at: ${LOG_FILE}`);
 }
 
 startServer();

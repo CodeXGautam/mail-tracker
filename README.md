@@ -2,13 +2,15 @@
 
 A powerful email tracking extension for Gmail that provides real-time tracking of when your emails are opened.
 
+![Dashboard](icons/dashboard.png)
+
 ## Features
 
-- 📧 **Real-time Email Tracking** - Track when your emails are opened
-- 📊 **Dashboard Analytics** - Beautiful dashboard with detailed statistics
-- 🔔 **Instant Notifications** - Get notified when emails are opened
-- 🎯 **Gmail Integration** - Seamless integration with Gmail
-- 📈 **Tracking Analytics** - View detailed tracking logs and statistics
+- **Real-time Email Tracking** - Track when your emails are opened
+- **Dashboard Analytics** - Beautiful dashboard with detailed statistics
+- **Instant Notifications** - Get notified when emails are opened
+- **Gmail Integration** - Seamless integration with Gmail
+- **Tracking Analytics** - View detailed tracking logs and statistics
 
 ## Installation
 
@@ -87,7 +89,8 @@ Firefox extension/
 ├── icons/                # Extension icons
 │   ├── icon16.png
 │   ├── icon48.png
-│   └── icon128.png
+│   ├── icon128.png
+│   └── dashboard.png     # Dashboard screenshot
 ├── generate-icons.html   # Icon generator tool
 └── README.md            # This file
 ```

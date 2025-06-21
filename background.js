@@ -36,7 +36,7 @@ browser.storage.local.get(['extensionState'], (result) => {
 // Auto-initialize user with Gmail email
 async function initializeUser() {
   try {
-    console.log("🔄 Initializing user...");
+    console.log("Initializing user...");
     
     // Get the current tab to access Gmail
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -95,7 +95,7 @@ async function initializeUser() {
       const userEmail = results[0];
       
       if (userEmail && userEmail.includes('@')) {
-        console.log("📧 Found Gmail user:", userEmail);
+        console.log("Found Gmail user:", userEmail);
         
         // Auto-create user account
         const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
@@ -107,11 +107,11 @@ async function initializeUser() {
           })
         });
         
-        console.log("📡 Auto-create response status:", response.status);
+        console.log("Auto-create response status:", response.status);
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("❌ Auto-create failed with status:", response.status, "Response:", errorText);
+          console.error("Auto-create failed with status:", response.status, "Response:", errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
@@ -121,33 +121,33 @@ async function initializeUser() {
           extensionState.apiKey = data.user.apiKey;
           extensionState.isInitialized = true;
           saveExtensionState();
-          console.log("✅ User auto-created and authenticated:", data.user.email);
+          console.log("User auto-created and authenticated:", data.user.email);
           
           // Navigate to the extension's main page after successful initialization
           try {
             const extensionUrl = browser.runtime.getURL('index.html');
             await browser.tabs.create({ url: extensionUrl });
-            console.log("🌐 Navigated to extension main page");
+            console.log("Navigated to extension main page");
           } catch (navError) {
-            console.error("❌ Navigation error:", navError);
+            console.error("Navigation error:", navError);
           }
         } else {
-          console.error("❌ Failed to auto-create user:", data.error);
+          console.error("Failed to auto-create user:", data.error);
         }
       } else {
-        console.log("⚠️ Could not detect Gmail user email - user will be created when first email is sent");
+        console.log("Could not detect Gmail user email - user will be created when first email is sent");
         // Don't create a manual user, just mark as not initialized
         extensionState.isInitialized = false;
         saveExtensionState();
       }
     } else {
-      console.log("⚠️ Not on Gmail - user will be created when first email is sent from Gmail");
+      console.log("Not on Gmail - user will be created when first email is sent from Gmail");
       // Don't create a manual user, just mark as not initialized
       extensionState.isInitialized = false;
       saveExtensionState();
     }
   } catch (error) {
-    console.error("❌ Auto-initialization error:", error);
+    console.error("Auto-initialization error:", error);
     // Don't throw error, just mark as not initialized
     extensionState.isInitialized = false;
     saveExtensionState();
@@ -208,7 +208,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
           user: extensionState.apiKey ? { apiKey: extensionState.apiKey } : null
         });
       }).catch(error => {
-        console.error("❌ Initialization failed:", error);
+        console.error("Initialisation failed:", error);
         sendResponse({ 
           success: false,
           error: error.message,
@@ -224,7 +224,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         browser.tabs.create({ url: extensionUrl });
         sendResponse({ success: true });
       } catch (error) {
-        console.error("❌ Error opening main page:", error);
+        console.error("Error opening main page:", error);
         sendResponse({ success: false, error: error.message });
       }
       return true;
@@ -243,12 +243,12 @@ async function handleEmailSent(email, sendResponse) {
 
   // Check if user is authenticated, if not, try to create user from email sender
   if (!extensionState.apiKey) {
-    console.log("🔄 User not authenticated, attempting to create user from email sender...");
+    console.log("User not authenticated, attempting to create user from email sender...");
     
     if (email.from && email.from.includes('@')) {
       try {
         const senderEmail = email.from;
-        console.log("📧 Creating user from email sender:", senderEmail);
+        console.log("Creating user from email sender:", senderEmail);
         
         const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
           method: "POST",
@@ -261,7 +261,7 @@ async function handleEmailSent(email, sendResponse) {
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("❌ User creation failed:", response.status, "Response:", errorText);
+          console.error("User creation failed:", response.status, "Response:", errorText);
           sendResponse({ 
             success: false, 
             reason: "Could not create user account. Please try again." 
@@ -275,9 +275,9 @@ async function handleEmailSent(email, sendResponse) {
           extensionState.apiKey = data.user.apiKey;
           extensionState.isInitialized = true;
           saveExtensionState();
-          console.log("✅ User created and authenticated from email sender:", data.user.email);
+          console.log("User created and authenticated from email sender:", data.user.email);
         } else {
-          console.error("❌ Failed to create user:", data.error);
+          console.error("Failed to create user:", data.error);
           sendResponse({ 
             success: false, 
             reason: "Could not create user account. Please try again." 
@@ -285,7 +285,7 @@ async function handleEmailSent(email, sendResponse) {
           return;
         }
       } catch (error) {
-        console.error("❌ Error creating user from email sender:", error);
+        console.error("Error creating user from email sender:", error);
         sendResponse({ 
           success: false, 
           reason: "Could not create user account. Please try again." 
@@ -335,13 +335,13 @@ async function handleEmailSent(email, sendResponse) {
       })
       .then(response => {
         if (!response.ok) {
-          console.error("❌ Email storage failed:", response.status, response.statusText);
+          console.error("Email storage failed:", response.status, response.statusText);
         } else {
-          console.log("✅ Email stored successfully");
+          console.log("Email stored successfully");
         }
       })
       .catch(error => {
-        console.error("❌ Network error storing email:", error);
+        console.error("Network error storing email:", error);
       });
 
       sendResponse({
@@ -397,13 +397,13 @@ function handleStatusUpdate(emailId, status, details = {}) {
       })
       .then(response => {
         if (!response.ok) {
-          console.error("❌ Status update failed:", response.status, response.statusText);
+          console.error("Status update failed:", response.status, response.statusText);
         } else {
-          console.log("✅ Status updated successfully:", status);
+          console.log("Status updated successfully:", status);
         }
       })
       .catch(error => {
-        console.error("❌ Network error updating status:", error);
+        console.error("Network error updating status:", error);
       });
     });
   });

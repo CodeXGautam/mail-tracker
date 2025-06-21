@@ -22,11 +22,11 @@ function insertTrackingPixel(emailId) {
   
   // Validate emailId
   if (!emailId || emailId.length > 100) {
-    console.error('❌ Invalid emailId:', emailId);
+    console.error('Invalid emailId:', emailId);
     return false;
   }
   
-  console.log("📩 insertTrackingPixel called with emailId:", emailId);
+  console.log("insertTrackingPixel called with emailId:", emailId);
   
   // Create a more robust pixel URL
   const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
@@ -49,7 +49,7 @@ function insertTrackingPixel(emailId) {
   for (const selector of composeSelectors) {
     composeArea = document.querySelector(selector);
     if (composeArea) {
-      console.log("🎯 Found compose area with selector:", selector);
+      console.log("Found compose area with selector:", selector);
       break;
     }
   }
@@ -57,48 +57,48 @@ function insertTrackingPixel(emailId) {
   if (composeArea) {
     // Check if pixel already exists
     if (composeArea.innerHTML.includes(pixelUrl)) {
-      console.log("⚠️ Pixel already exists in compose area");
+      console.log("Pixel already exists in compose area");
       return true;
     }
     
     // Insert pixel at the end of the content
     composeArea.innerHTML += pixelTag;
-    console.log("✅ Pixel inserted into email body:", pixelUrl);
-    console.log("📝 Compose area content length:", composeArea.innerHTML.length);
-    console.log("🔍 Pixel HTML:", pixelTag);
+    console.log("Pixel inserted into email body:", pixelUrl);
+    console.log("Compose area content length:", composeArea.innerHTML.length);
+    console.log("Pixel HTML:", pixelTag);
     
     // Verify insertion
     if (composeArea.innerHTML.includes(pixelUrl)) {
-      console.log("✅ Pixel insertion verified");
+      console.log("Pixel insertion verified");
       return true;
     } else {
-      console.error("❌ Pixel insertion failed - not found in content");
+      console.error("Pixel insertion failed - not found in content");
       return false;
     }
   } else {
-    console.log("❌ No compose area found with any selector");
-    console.log("🔍 Available elements with role='textbox':", document.querySelectorAll('[role="textbox"]').length);
-    console.log("🔍 Available contenteditable elements:", document.querySelectorAll('[contenteditable="true"]').length);
+    console.log("No compose area found with any selector");
+    console.log("Available elements with role='textbox':", document.querySelectorAll('[role="textbox"]').length);
+    console.log("Available contenteditable elements:", document.querySelectorAll('[contenteditable="true"]').length);
     return false;
   }
 }
 
 // Debug function to manually test pixel insertion
 window.testPixelInsertion = function() {
-  console.log("🧪 Testing pixel insertion...");
+  console.log("Testing pixel insertion...");
   // Use a mock threadId for testing
   const mockThreadId = 'test-thread-id-' + Date.now();
   const emailId = getOrCreateEmailId(mockThreadId);
   const result = insertTrackingPixel(emailId);
-  console.log("🧪 Test result:", result);
+  console.log("Test result:", result);
   return result;
 };
 
 // Debug function to manually insert pixel with specific emailId
 window.insertPixelManually = function(emailId) {
-  console.log("🔧 Manually inserting pixel with emailId:", emailId);
+  console.log("Manually inserting pixel with emailId:", emailId);
   const result = insertTrackingPixel(emailId);
-  console.log("🔧 Manual insertion result:", result);
+  console.log("Manual insertion result:", result);
   return result;
 };
 
@@ -118,46 +118,46 @@ window.showComposeContent = function() {
   for (const selector of composeSelectors) {
     composeArea = document.querySelector(selector);
     if (composeArea) {
-      console.log("🎯 Found compose area with selector:", selector);
-      console.log("📝 Compose area content:", composeArea.innerHTML);
-      console.log("📏 Content length:", composeArea.innerHTML.length);
-      console.log("🔍 Contains pixel:", composeArea.innerHTML.includes('pixel.png'));
+      console.log("Found compose area with selector:", selector);
+      console.log("Compose area content:", composeArea.innerHTML);
+      console.log("Content length:", composeArea.innerHTML.length);
+      console.log("Contains pixel:", composeArea.innerHTML.includes('pixel.png'));
       return composeArea;
     }
   }
   
-  console.log("❌ No compose area found");
+  console.log("No compose area found");
   return null;
 };
 
 // Debug function to test pixel tracking by simulating a request
 window.testPixelTracking = function(emailId) {
-  console.log("🧪 Testing pixel tracking for emailId:", emailId);
+  console.log("Testing pixel tracking for emailId:", emailId);
   const pixelUrl = `https://mail-tracker-k1hl.onrender.com/pixel.png?emailId=${encodeURIComponent(emailId)}`;
   
   // Create an image element to simulate the pixel request
   const img = new Image();
   img.onload = function() {
-    console.log("✅ Pixel tracking test successful - image loaded");
+    console.log("Pixel tracking test successful - image loaded");
   };
   img.onerror = function() {
-    console.log("❌ Pixel tracking test failed - image failed to load");
+    console.log("Pixel tracking test failed - image failed to load");
   };
   img.src = pixelUrl;
   
   // Also try a direct fetch request
   fetch(pixelUrl)
     .then(response => {
-      console.log("✅ Pixel tracking test successful - fetch response:", response.status);
+      console.log("Pixel tracking test successful - fetch response:", response.status);
     })
     .catch(error => {
-      console.log("❌ Pixel tracking test failed - fetch error:", error);
+      console.log("Pixel tracking test failed - fetch error:", error);
     });
 };
 
 // Debug function to show all potential compose areas
 window.showComposeAreas = function() {
-  console.log("🔍 Searching for compose areas...");
+  console.log("Searching for compose areas...");
   const selectors = [
     '[role="textbox"]',
     '[contenteditable="true"]',
@@ -168,7 +168,7 @@ window.showComposeAreas = function() {
   
   selectors.forEach(selector => {
     const elements = document.querySelectorAll(selector);
-    console.log(`🔍 ${selector}:`, elements.length, "elements found");
+    console.log(`${selector}:`, elements.length, "elements found");
     elements.forEach((el, i) => {
       console.log(`  ${i + 1}.`, {
         ariaLabel: el.getAttribute('aria-label'),
@@ -240,7 +240,7 @@ function attachListenerToNewSendButton(sendButton) {
 
         // Extract all data directly from the compose window
         const toFields = dialog.querySelectorAll('input[name="to"], textarea[name="to"], input[aria-label*="To"], textarea[aria-label*="To"], .wO.nr.l1 input, .wO.nr.l1 textarea');
-        console.log('🔍 Found recipient fields:', toFields.length);
+        console.log('Found recipient fields:', toFields.length);
         toFields.forEach((field, i) => {
             console.log(`  Field ${i + 1}:`, {
                 tagName: field.tagName,
@@ -268,7 +268,7 @@ function attachListenerToNewSendButton(sendButton) {
                            chip.getAttribute('data-hovercard-id') || 
                            chip.textContent.trim();
                 }).join(', ');
-                console.log('📧 Found recipients from email chips:', toRecipients);
+                console.log('Found recipients from email chips:', toRecipients);
             }
         }
         
@@ -281,11 +281,11 @@ function attachListenerToNewSendButton(sendButton) {
             });
             if (emailElements.length > 0) {
                 toRecipients = emailElements.map(el => el.textContent.trim()).join(', ');
-                console.log('📧 Found recipients from email elements:', toRecipients);
+                console.log('Found recipients from email elements:', toRecipients);
             }
         }
         
-        console.log('📧 Final extracted recipients:', toRecipients);
+        console.log('Final extracted recipients:', toRecipients);
         
         const subjectInput = dialog.querySelector('input[name="subjectbox"], input[aria-label*="Subject"], .aoD.az6 input');
         const subject = subjectInput ? subjectInput.value : '';
@@ -299,14 +299,14 @@ function attachListenerToNewSendButton(sendButton) {
         const emailId = getOrCreateEmailId(threadId);
         
         // Ensure pixel is in the body before capturing it
-        console.log("🔍 Checking for existing pixel in compose area...");
+        console.log("Checking for existing pixel in compose area...");
         let pixelInserted = false;
         
         if (composeArea.innerHTML.includes('pixel.png')) {
-            console.log("✅ Pixel already exists in compose area");
+            console.log("Pixel already exists in compose area");
             pixelInserted = true;
         } else {
-            console.log("📩 Inserting pixel into compose area...");
+            console.log("Inserting pixel into compose area...");
             pixelInserted = insertTrackingPixel(emailId);
         }
         
@@ -326,14 +326,14 @@ function attachListenerToNewSendButton(sendButton) {
                 };
 
                 // Send the complete data package to the background script
-                console.log('📤 Sending emailSent message with complete data:', emailData);
+                console.log('Sending emailSent message with complete data:', emailData);
                 browser.runtime.sendMessage({
                     type: "emailSent",
                     email: emailData
                 });
             }, 100); // Small delay to ensure pixel is inserted
         } else {
-            console.error("❌ Failed to insert tracking pixel, email will not be tracked");
+            console.error("Failed to insert tracking pixel, email will not be tracked");
         }
 
     }, { capture: true });
@@ -382,4 +382,4 @@ function getThreadIdFromElement(element) {
   return threadId;
 }
 
-console.log("📡 Mail tracker extension script loaded - using Send button capture method only"); 
+console.log("Mail tracker extension script loaded - using Send button capture method only"); 
