@@ -122,17 +122,68 @@ async function initializeUser() {
           extensionState.isInitialized = true;
           saveExtensionState();
           console.log("✅ User auto-created and authenticated:", data.user.email);
+          
+          // Navigate to the extension's main page after successful initialization
+          try {
+            const extensionUrl = browser.runtime.getURL('index.html');
+            await browser.tabs.create({ url: extensionUrl });
+            console.log("🌐 Navigated to extension main page");
+          } catch (navError) {
+            console.error("❌ Navigation error:", navError);
+          }
         } else {
           console.error("❌ Failed to auto-create user:", data.error);
         }
       } else {
         console.log("⚠️ Could not detect Gmail user email");
+        throw new Error("Could not detect Gmail user email");
       }
     } else {
-      console.log("⚠️ Not on Gmail, skipping auto-initialization");
+      console.log("⚠️ Not on Gmail, attempting manual initialization...");
+      
+      // Try manual initialization with a generic email
+      const manualEmail = `user-${Date.now()}@mailtracker.local`;
+      console.log("📧 Using manual email:", manualEmail);
+      
+      const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email: manualEmail,
+          name: "Manual User"
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Manual initialization failed:", response.status, "Response:", errorText);
+        throw new Error(`Manual initialization failed: HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        extensionState.apiKey = data.user.apiKey;
+        extensionState.isInitialized = true;
+        saveExtensionState();
+        console.log("✅ Manual user created and authenticated:", data.user.email);
+        
+        // Navigate to the extension's main page after successful initialization
+        try {
+          const extensionUrl = browser.runtime.getURL('index.html');
+          await browser.tabs.create({ url: extensionUrl });
+          console.log("🌐 Navigated to extension main page");
+        } catch (navError) {
+          console.error("❌ Navigation error:", navError);
+        }
+      } else {
+        console.error("❌ Failed to create manual user:", data.error);
+        throw new Error("Failed to create manual user");
+      }
     }
   } catch (error) {
     console.error("❌ Auto-initialization error:", error);
+    throw error;
   }
 }
 
@@ -189,7 +240,26 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
           isAuthenticated: !!extensionState.apiKey,
           user: extensionState.apiKey ? { apiKey: extensionState.apiKey } : null
         });
+      }).catch(error => {
+        console.error("❌ Initialization failed:", error);
+        sendResponse({ 
+          success: false,
+          error: error.message,
+          isAuthenticated: false,
+          user: null
+        });
       });
+      return true;
+
+    case 'openDashboard':
+      try {
+        const extensionUrl = browser.runtime.getURL('index.html');
+        browser.tabs.create({ url: extensionUrl });
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error("❌ Error opening main page:", error);
+        sendResponse({ success: false, error: error.message });
+      }
       return true;
 
     default:
@@ -250,6 +320,16 @@ async function handleEmailSent(email, sendResponse) {
           sentTime: new Date().toISOString(),
           // hasTrackingPixel is already set to true by the content script
         })
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error("❌ Email storage failed:", response.status, response.statusText);
+        } else {
+          console.log("✅ Email stored successfully");
+        }
+      })
+      .catch(error => {
+        console.error("❌ Network error storing email:", error);
       });
 
       sendResponse({

@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (initBtn) {
     initBtn.addEventListener('click', initializeUser);
   }
+  
+  // Add event listener for main page button
+  const dashboardBtn = document.getElementById('dashboardBtn');
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', openMainPage);
+  }
 });
 
 async function checkStatus() {
@@ -27,6 +33,7 @@ function updateUI(status) {
   const userEmail = document.getElementById('userEmail');
   const userStatus = document.getElementById('userStatus');
   const initBtn = document.getElementById('initBtn');
+  const dashboardBtn = document.getElementById('dashboardBtn');
   const btnText = initBtn.querySelector('.btn-text');
   const loading = initBtn.querySelector('.loading');
 
@@ -37,17 +44,20 @@ function updateUI(status) {
     userEmail.textContent = status.user ? 'Connected' : 'Unknown';
     userStatus.textContent = 'Active';
     initBtn.style.display = 'none';
+    dashboardBtn.style.display = 'block';
   } else if (status.isInitialized) {
     statusIcon.textContent = '⚠️';
     statusText.textContent = 'Initialized but not authenticated';
     userInfo.style.display = 'none';
     initBtn.style.display = 'block';
+    dashboardBtn.style.display = 'none';
     btnText.textContent = 'Retry Authentication';
   } else {
     statusIcon.textContent = '❌';
     statusText.textContent = 'Not initialized';
     userInfo.style.display = 'none';
     initBtn.style.display = 'block';
+    dashboardBtn.style.display = 'none';
     btnText.textContent = 'Initialize User';
   }
 }
@@ -81,6 +91,19 @@ async function initializeUser() {
     initBtn.disabled = false;
     btnText.style.display = 'inline';
     loading.style.display = 'none';
+  }
+}
+
+async function openMainPage() {
+  try {
+    const response = await browser.runtime.sendMessage({ type: 'openDashboard' });
+    if (response.success) {
+      window.close(); // Close the popup
+    } else {
+      console.error('Failed to open main page:', response.error);
+    }
+  } catch (error) {
+    console.error('Error opening main page:', error);
   }
 }
 

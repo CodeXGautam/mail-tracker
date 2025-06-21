@@ -1,11 +1,13 @@
-// Mail Tracker Dashboard Logic
+// Mail Tracker Main Page Logic
 
 let currentFilter = 'all';
 let emails = [];
 let logs = [];
+let apiKey = null;
 
-// Initialize dashboard
-function initDashboard() {
+// Initialize main page
+async function initDashboard() {
+    await getApiKey();
     checkServerStatus();
     loadData();
     setupFilters();
@@ -16,10 +18,53 @@ function initDashboard() {
     setInterval(loadData, 30000);
 }
 
+// Get API key from extension
+async function getApiKey() {
+    try {
+        if (typeof browser !== 'undefined') {
+            const response = await browser.runtime.sendMessage({ type: 'getAuthStatus' });
+            if (response.isAuthenticated && response.user) {
+                apiKey = response.user.apiKey;
+                console.log("✅ API key obtained from extension");
+                return true;
+            } else {
+                console.warn("⚠️ User not authenticated, some features may not work");
+                return false;
+            }
+        }
+    } catch (error) {
+        console.error("❌ Error getting API key:", error);
+        return false;
+    }
+}
+
+// Refresh API key and retry if needed
+async function refreshApiKeyAndRetry() {
+    const success = await getApiKey();
+    if (success) {
+        loadData(); // Retry loading data with new API key
+    }
+}
+
+// Show authentication error message
+function showAuthError() {
+    const container = document.getElementById('sent-emails-list');
+    container.innerHTML = `
+        <div class="auth-error">
+            <div class="error-icon">🔐</div>
+            <div class="error-message">
+                <h3>Authentication Required</h3>
+                <p>Please make sure you're on Gmail and the extension is properly initialized.</p>
+                <button onclick="refreshApiKeyAndRetry()" class="retry-btn">Retry</button>
+            </div>
+        </div>
+    `;
+}
+
 document.addEventListener('DOMContentLoaded', initDashboard);
 
 function checkServerStatus() {
-    fetch('https://mail-tracker-k1hl.onrender.com/logs')
+    fetch('https://mail-tracker-k1hl.onrender.com/health')
         .then(response => {
             if (response.ok) {
                 document.getElementById('server-status').className = 'status-indicator status-online';
@@ -40,9 +85,36 @@ function loadData() {
 }
 
 function loadEmails() {
-    fetch('https://mail-tracker-k1hl.onrender.com/emails')
-        .then(response => response.json())
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+    } else {
+        console.warn("⚠️ No API key available, showing authentication error");
+        showAuthError();
+        return;
+    }
+    
+    fetch('https://mail-tracker-k1hl.onrender.com/emails', {
+        method: 'GET',
+        headers: headers
+    })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.error("❌ Authentication failed, refreshing API key...");
+                    refreshApiKeyAndRetry();
+                    return null;
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            if (data === null) return; // Authentication error handled above
+            
             console.log("Fetched emails from backend:", data);
             emails = data
                 .filter(email => email.hasTrackingPixel)
@@ -58,15 +130,24 @@ function loadEmails() {
         })
         .catch(error => {
             console.error('Error loading emails from backend:', error);
-            emails = [];
-            updateEmailDisplay();
-            updateStats();
+            if (error.message.includes('401')) {
+                showAuthError();
+            } else {
+                emails = [];
+                updateEmailDisplay();
+                updateStats();
+            }
         });
 }
 
 function loadLogs() {
     fetch('https://mail-tracker-k1hl.onrender.com/logs')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             logs = Array.isArray(data) ? data : [];
             updateLogDisplay();
