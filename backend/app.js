@@ -238,11 +238,11 @@ app.get("/pixel.png", async (req, res) => {
               status: "read", 
               lastUpdate: new Date(),
               readTime: new Date(),
-              "trackingData.opens": { $inc: 1 },
               "trackingData.lastOpen": new Date(),
               userAgent,
               ipAddress: ip
-            } 
+            },
+            $inc: { "trackingData.opens": 1 }
           },
           { new: true }
         );
@@ -255,6 +255,28 @@ app.get("/pixel.png", async (req, res) => {
           const existingEmail = await Email.findOne({ emailId });
           if (existingEmail) {
             console.log("✅ Email found but update failed:", existingEmail._id);
+            
+            // Try a simpler update without $inc
+            try {
+              const simpleUpdate = await Email.findOneAndUpdate(
+                { emailId },
+                { 
+                  $set: { 
+                    status: "read", 
+                    lastUpdate: new Date(),
+                    readTime: new Date(),
+                    userAgent,
+                    ipAddress: ip
+                  }
+                },
+                { new: true }
+              );
+              if (simpleUpdate) {
+                console.log("✅ Simple update successful for emailId:", emailId);
+              }
+            } catch (simpleErr) {
+              console.error("❌ Simple update also failed:", simpleErr.message);
+            }
           } else {
             console.log("❌ No email found with emailId:", emailId);
           }
@@ -266,6 +288,24 @@ app.get("/pixel.png", async (req, res) => {
       }
     } catch (err) {
       console.error("❌ Failed to update email status to 'read' for:", emailId, err);
+      
+      // Try a fallback update without complex operations
+      try {
+        const fallbackUpdate = await Email.findOneAndUpdate(
+          { emailId },
+          { 
+            $set: { 
+              status: "read", 
+              lastUpdate: new Date()
+            }
+          }
+        );
+        if (fallbackUpdate) {
+          console.log("✅ Fallback update successful for emailId:", emailId);
+        }
+      } catch (fallbackErr) {
+        console.error("❌ Fallback update also failed:", fallbackErr.message);
+      }
     }
 
     // Always log the pixel access, even if DB update fails
