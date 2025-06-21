@@ -1,148 +1,177 @@
-# Mail Tracker Pro - Firefox Extension
+# 📩 Mail Tracker Pro – Firefox Extension
 
-A powerful email tracking extension for Gmail that provides real-time tracking of when your emails are opened.
+**Mail Tracker Pro** is a powerful email tracking extension for Gmail, designed to provide **real-time notifications** and **detailed analytics** when your emails are opened. Seamlessly integrated with Gmail, this extension offers insight and visibility into your email interactions—right from your browser.
 
-![Dashboard](icons/dashboard.png)
+![Dashboard Preview](icons/dashboard.png)
 
-## Features
+---
 
-- **Real-time Email Tracking** - Track when your emails are opened
-- **Dashboard Analytics** - Beautiful dashboard with detailed statistics
-- **Instant Notifications** - Get notified when emails are opened
-- **Gmail Integration** - Seamless integration with Gmail
-- **Tracking Analytics** - View detailed tracking logs and statistics
+## 🚀 Features
 
-## Installation
+- 🔔 **Real-Time Email Tracking** — Instantly know when your emails are opened.  
+- 📊 **Advanced Dashboard Analytics** — Intuitive dashboard with detailed email open statistics.  
+- 📥 **Instant Notifications** — Get notified the moment your email is viewed.  
+- 💌 **Gmail Integration** — Works directly with Gmail for a smooth experience.  
+- 📈 **Comprehensive Tracking Logs** — Access detailed logs and interaction data.
 
-### For Testing (Development Mode)
+---
+
+## 🛠️ Installation Guide
+
+### 🔧 For Testing (Development Mode)
 
 1. **Download the Extension**
-   - Download or clone this repository
-   - Extract the files to a folder on your computer
+   - Clone or download this repository.
+   - Extract all files into a local folder.
 
-2. **Generate Icons** (if not already included)
-   - Open `generate-icons.html` in your browser
-   - Click "Generate Icons" then download each size
-   - Save the PNG files to the `icons/` folder as:
-     - `icon16.png` (16x16 pixels)
-     - `icon48.png` (48x48 pixels)
-     - `icon128.png` (128x128 pixels)
+2. **Generate Required Icons** *(if missing)*
+   - Open `generate-icons.html` in your browser.
+   - Click “Generate Icons” and download all sizes.
+   - Save them in the `icons/` folder as:
+     - `icon16.png`
+     - `icon48.png`
+     - `icon128.png`
 
 3. **Install in Firefox**
-   - Open Firefox and go to `about:debugging`
-   - Click "This Firefox" in the left sidebar
-   - Click "Load Temporary Add-on"
-   - Select the `manifest.json` file from the extension folder
-   - The extension will be installed temporarily
+   - Open Firefox and navigate to `about:debugging`.
+   - Click **"This Firefox"** on the sidebar.
+   - Click **"Load Temporary Add-on"** and select `manifest.json`.
 
 4. **Test the Extension**
-   - Go to Gmail (mail.google.com)
-   - The extension will automatically initialize when you're on Gmail
-   - Click the extension icon in the toolbar to open the popup
-   - Click "Open Dashboard" to view the main tracking interface
+   - Go to [Gmail](https://mail.google.com).
+   - The extension activates automatically.
+   - Use the toolbar icon to open the popup.
+   - Click “Open Dashboard” to view tracking insights.
 
-### For Distribution
+---
+
+### 📦 For Distribution
 
 1. **Package the Extension**
-   - Create a ZIP file containing all extension files:
+   - Zip the following files:
      - `manifest.json`
      - `background.js`
-     - `popup.html`
-     - `popup.js`
+     - `popup.html`, `popup.js`
      - `script.js`
-     - `index.html`
-     - `app.js`
-     - `icons/` folder with all icon files
+     - `index.html`, `app.js`
+     - `icons/` folder
      - `README.md`
 
 2. **Submit to Firefox Add-ons**
-   - Go to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/developers/)
-   - Create an account and submit your extension
-   - Follow the review process
+   - Visit the [Firefox Add-ons Developer Hub](https://addons.mozilla.org/developers/).
+   - Create an account and follow the submission guidelines.
+   - Upload your ZIP file and await review.
 
-## How It Works
+---
 
-1. **Email Detection**: The extension detects when you send emails in Gmail
-2. **Pixel Injection**: A tracking pixel is automatically added to your emails
-3. **Real-time Tracking**: When recipients open your email, the pixel loads and tracks the event
-4. **Dashboard Updates**: The dashboard shows real-time statistics and tracking data
+## ⚙️ How It Works
 
-## Backend Requirements
+1. **Detection**: Identifies sent emails via Gmail.
+2. **Pixel Injection**: Embeds a tracking pixel into outgoing emails.
+3. **Real-Time Monitoring**: Records the exact moment an email is opened.
+4. **Dashboard Sync**: All tracking events are reflected live on the dashboard.
 
-The extension requires a backend server running at `https://mail-tracker-k1hl.onrender.com`. The backend handles:
-- User authentication
-- Email storage and tracking
-- Pixel serving
-- Analytics and statistics
+---
 
-## File Structure
+## 🌐 Backend Requirements
+
+This extension relies on a backend server hosted at:
+
+```
+https://mail-tracker-k1hl.onrender.com
+```
+
+The backend is responsible for:
+
+- User authentication  
+- Email data storage  
+- Serving the tracking pixel  
+- Real-time analytics and logging  
+
+---
+
+## 📁 File Structure
 
 ```
 Firefox extension/
-├── manifest.json          # Extension configuration
-├── background.js          # Background script for extension logic
-├── popup.html            # Extension popup interface
-├── popup.js              # Popup functionality
-├── script.js             # Content script for Gmail integration
-├── index.html            # Main dashboard
-├── app.js                # Dashboard functionality
-├── icons/                # Extension icons
+├── manifest.json          # WebExtension config
+├── background.js          # Core background logic
+├── popup.html             # Popup UI
+├── popup.js               # Popup behavior
+├── script.js              # Content script for Gmail
+├── index.html             # Main dashboard page
+├── app.js                 # Dashboard logic
+├── icons/                 # Extension icons
 │   ├── icon16.png
 │   ├── icon48.png
 │   ├── icon128.png
-│   └── dashboard.png     # Dashboard screenshot
-├── generate-icons.html   # Icon generator tool
-└── README.md            # This file
+│   └── dashboard.png      # Dashboard screenshot
+├── generate-icons.html    # Tool to generate icons
+└── README.md              # Project documentation
 ```
 
-## Permissions
+---
 
-The extension requires the following permissions:
-- `storage`: To save user data and settings
-- `activeTab`: To interact with Gmail tabs
-- `notifications`: To show tracking notifications
-- `webRequest`: To monitor network requests
-- `*://mail.google.com/*`: To access Gmail
-- `*://mail-tracker-k1hl.onrender.com/*`: To communicate with the backend
+## 🔐 Required Permissions
 
-## Troubleshooting
+The extension requests the following:
 
-### Extension Not Working
-1. Make sure you're on Gmail (mail.google.com)
-2. Check the browser console for error messages
-3. Try refreshing the page
-4. Check if the backend server is running
+- `storage` – Save user preferences and session data.  
+- `activeTab` – Interact with the currently open Gmail tab.  
+- `notifications` – Display desktop alerts.  
+- `webRequest` – Monitor Gmail-related traffic.  
+- `*://mail.google.com/*` – Access Gmail.  
+- `*://mail-tracker-k1hl.onrender.com/*` – Backend communication.  
 
-### Icons Not Showing
-1. Generate icons using `generate-icons.html`
-2. Make sure icon files are in the `icons/` folder
-3. Verify icon file names match the manifest
+---
 
-### Tracking Not Working
-1. Check if you're authenticated (extension popup should show status)
-2. Verify the backend server is accessible
-3. Check browser console for network errors
+## 🧪 Troubleshooting
 
-## Development
+### 🛑 Extension Not Working?
+- Ensure you’re on [Gmail](https://mail.google.com)  
+- Check browser console for errors  
+- Refresh the Gmail tab  
+- Confirm the backend server is live  
 
-### Local Development
-1. Set up the backend server (see backend/README.md)
-2. Update the backend URL in `background.js` and `app.js`
-3. Test locally before deployment
+### ❌ Icons Not Displaying?
+- Generate icons using `generate-icons.html`  
+- Check that all required sizes exist in `icons/`  
+- Ensure filenames match those in `manifest.json`  
 
-### Testing
-- Use the test functions in the browser console:
-  - `testPixelTracking(emailId)` - Test pixel tracking
-  - `testServerHealth()` - Check server status
-  - `simulateStatusUpdate(emailId, status)` - Simulate status updates
+### 📭 Tracking Not Functioning?
+- Confirm you're logged in (check extension popup)  
+- Verify backend is operational  
+- Inspect network tab in browser dev tools for failed requests  
 
-## Support
+---
 
-For issues or questions:
-1. Check the browser console for error messages
-2. Verify all files are present and properly configured
-3. Ensure the backend server is running and accessible
+## 👨‍💻 Development & Testing
 
-## License
+### 🔄 Local Development
+- Set up your backend server (see `backend/README.md`)  
+- Update backend URLs in `background.js` and `app.js`  
+- Test using Firefox's "Temporary Add-on" mode  
 
-This project is for educational and personal use. Please respect privacy and email tracking laws in your jurisdiction. 
+### 🧪 Testing Functions  
+Execute these in the browser console:
+
+```js
+testPixelTracking(emailId);        // Simulate pixel tracking
+testServerHealth();                // Check backend availability
+simulateStatusUpdate(emailId, status); // Manually trigger a status change
+```
+
+---
+
+## 📬 Support
+
+For issues or queries:  
+- Check browser console for logs  
+- Confirm all necessary files are present  
+- Make sure the backend is online and reachable  
+
+---
+
+## 📄 License
+
+This project is intended for **educational and personal use only**. Ensure compliance with email privacy and tracking regulations applicable in your region.
