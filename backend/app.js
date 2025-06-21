@@ -7,11 +7,29 @@ import mongoose from "mongoose";
 import Email from "./model/email.model.js";
 import authRoutes from "./routes/auth.js";
 import { authenticateToken, authenticateApiKey } from "./middleware/auth.js";
-import User from "./model/user.model.js";
+import { User } from "./model/user.model.js";
 import crypto from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Constants
+const LOG_FILE = path.join(__dirname, "logs.json");
+const MAX_LOG_SIZE = 5 * 1024 * 1024;
+
+// Helper function for log rotation
+async function checkLogRotation() {
+  try {
+    const stats = await fs.stat(LOG_FILE);
+    if (stats.size > MAX_LOG_SIZE) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      await fs.rename(LOG_FILE, path.join(__dirname, `logs-${timestamp}.json`));
+      await fs.writeFile(LOG_FILE, "[]");
+    }
+  } catch (err) {
+    console.error("Log rotation error:", err);
+  }
+}
 
 const app = express();
 app.use(morgan("combined"));
@@ -48,14 +66,60 @@ app.post("/auth/auto-create", async (req, res) => {
   try {
     const { email, name } = req.body;
     
+    console.log("🔧 Auto-create request received:", { email, name });
+    
     if (!email) {
+      console.log("❌ No email provided");
       return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Check if database is connected
+    if (!mongoose.connection.readyState) {
+      console.log("⚠️ Database not connected, using fallback mechanism");
+      
+      // Generate a temporary API key for the session
+      const tempApiKey = crypto.randomBytes(32).toString('hex');
+      
+      // Store in logs as fallback
+      await checkLogRotation();
+      let currentLogs = [];
+      try {
+        currentLogs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+      } catch (err) {
+        currentLogs = [];
+      }
+      
+      const tempUser = {
+        id: `temp-${Date.now()}`,
+        email,
+        name: name || email.split('@')[0],
+        apiKey: tempApiKey,
+        timestamp: new Date().toISOString(),
+        type: 'temp-user'
+      };
+      
+      currentLogs.push(tempUser);
+      await fs.writeFile(LOG_FILE, JSON.stringify(currentLogs, null, 2));
+      
+      console.log(`✅ Temporary user created (DB offline): ${email}`);
+      
+      return res.status(201).json({
+        success: true,
+        user: {
+          id: tempUser.id,
+          email: tempUser.email,
+          name: tempUser.name,
+          apiKey: tempUser.apiKey
+        },
+        message: "Temporary user created (database offline)"
+      });
     }
 
     // Check if user already exists
     let user = await User.findOne({ email });
     
     if (user) {
+      console.log("✅ User already exists:", user.email);
       // User exists, return their API key
       return res.json({
         success: true,
@@ -69,7 +133,9 @@ app.post("/auth/auto-create", async (req, res) => {
       });
     }
 
-    // Create new user automatically
+    console.log("🆕 Creating new user...");
+    
+    // Create new user automatically (simplified version)
     user = new User({
       email,
       name: name || email.split('@')[0], // Use email prefix as name if not provided
@@ -78,7 +144,7 @@ app.post("/auth/auto-create", async (req, res) => {
       trackingEnabled: true
     });
 
-    // Generate API key
+    // Generate API key using the method
     user.generateApiKey();
 
     await user.save();
@@ -96,13 +162,12 @@ app.post("/auth/auto-create", async (req, res) => {
       message: "User created successfully"
     });
   } catch (error) {
-    console.error("Auto-create user error:", error);
-    res.status(500).json({ error: "Failed to create user" });
+    console.error("❌ Auto-create user error:", error);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ error: "Failed to create user", details: error.message });
   }
 });
 
-const LOG_FILE = path.join(__dirname, "logs.json");
-const MAX_LOG_SIZE = 5 * 1024 * 1024;
 const PIXEL = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
   "base64"
@@ -113,19 +178,6 @@ async function initLogFile() {
     await fs.access(LOG_FILE);
   } catch {
     await fs.writeFile(LOG_FILE, "[]");
-  }
-}
-
-async function checkLogRotation() {
-  try {
-    const stats = await fs.stat(LOG_FILE);
-    if (stats.size > MAX_LOG_SIZE) {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      await fs.rename(LOG_FILE, path.join(__dirname, `logs-${timestamp}.json`));
-      await fs.writeFile(LOG_FILE, "[]");
-    }
-  } catch (err) {
-    console.error("Log rotation error:", err);
   }
 }
 

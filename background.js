@@ -46,22 +46,49 @@ async function initializeUser() {
       // Execute script to get user's Gmail email
       const results = await browser.tabs.executeScript(currentTab.id, {
         code: `
-          // Try to get Gmail user email
-          const emailElement = document.querySelector('[data-email]') || 
-                              document.querySelector('[aria-label*="@"]') ||
-                              document.querySelector('.gb_d');
-          const email = emailElement ? 
-            (emailElement.getAttribute('data-email') || 
-             emailElement.getAttribute('aria-label') || 
-             emailElement.textContent) : null;
-          
-          // Fallback: try to get from page title or other elements
-          if (!email) {
-            const titleEmail = document.title.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-            if (titleEmail) return titleEmail[0];
-          }
-          
-          email;
+          (function() {
+            // Try to get Gmail user email
+            const emailElement = document.querySelector('[data-email]') || 
+                                document.querySelector('[aria-label*="@"]') ||
+                                document.querySelector('.gb_d');
+            let email = null;
+            
+            if (emailElement) {
+              email = emailElement.getAttribute('data-email') || 
+                     emailElement.getAttribute('aria-label') || 
+                     emailElement.textContent;
+            }
+            
+            // Fallback: try to get from page title or other elements
+            if (!email) {
+              const titleEmail = document.title.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (titleEmail) {
+                email = titleEmail[0];
+              }
+            }
+            
+            // Additional fallback: look for common Gmail user elements
+            if (!email) {
+              const userElements = document.querySelectorAll('[data-email], [aria-label*="@"], .gb_d, .gb_e');
+              for (let el of userElements) {
+                const text = el.textContent || el.getAttribute('aria-label') || el.getAttribute('data-email');
+                if (text && text.includes('@')) {
+                  email = text;
+                  break;
+                }
+              }
+            }
+            
+            // Clean up the email - extract just the email address if it's wrapped in text
+            if (email) {
+              const emailMatch = email.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (emailMatch) {
+                email = emailMatch[0];
+              }
+            }
+            
+            return email;
+          })();
         `
       });
       
@@ -79,6 +106,14 @@ async function initializeUser() {
             name: userEmail.split('@')[0]
           })
         });
+        
+        console.log("📡 Auto-create response status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Auto-create failed with status:", response.status, "Response:", errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
         
         const data = await response.json();
         

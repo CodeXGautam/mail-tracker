@@ -1,6 +1,13 @@
 import jwt from 'jsonwebtoken';
-import  User  from '../model/user.model.js';
+import { User } from '../model/user.model.js';
 import mongoose from 'mongoose';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const LOG_FILE = path.join(__dirname, "..", "logs.json");
 
 // Middleware to authenticate user via JWT token
 export const authenticateToken = async (req, res, next) => {
@@ -35,7 +42,29 @@ export const authenticateApiKey = async (req, res, next) => {
       return res.status(401).json({ error: 'API key required' });
     }
 
-    const user = await User.findOne({ apiKey, isActive: true }).select('-password');
+    // First try to find user in database
+    let user = await User.findOne({ apiKey, isActive: true }).select('-password');
+    
+    // If not found in database and database is offline, check logs for temporary users
+    if (!user && !mongoose.connection.readyState) {
+      try {
+        const logs = JSON.parse(await fs.readFile(LOG_FILE, "utf-8"));
+        const tempUser = logs.find(log => log.type === 'temp-user' && log.apiKey === apiKey);
+        
+        if (tempUser) {
+          // Create a mock user object for temporary users
+          user = {
+            _id: tempUser.id,
+            email: tempUser.email,
+            name: tempUser.name,
+            apiKey: tempUser.apiKey,
+            isActive: true
+          };
+        }
+      } catch (err) {
+        console.error("Error reading logs for temp user:", err);
+      }
+    }
     
     if (!user) {
       return res.status(401).json({ error: 'Invalid API key' });

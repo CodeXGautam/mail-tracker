@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
     {
@@ -52,13 +53,6 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Generate API key for user
-userSchema.methods.generateApiKey = function() {
-    const crypto = require('crypto');
-    this.apiKey = crypto.randomBytes(32).toString('hex');
-    return this.apiKey;
-};
-
 // Virtual for user's email count
 userSchema.virtual('emailCount', {
     ref: 'Email',
@@ -71,4 +65,10 @@ userSchema.virtual('emailCount', {
 userSchema.index({ email: 1 });
 userSchema.index({ apiKey: 1 });
 
-export default mongoose.model("User", userSchema);
+// Method to generate API key
+userSchema.methods.generateApiKey = function() {
+    this.apiKey = crypto.randomBytes(32).toString('hex');
+    return this.apiKey;
+};
+
+export const User = mongoose.model("User", userSchema);
