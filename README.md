@@ -24,20 +24,12 @@
    - Clone or download this repository.
    - Extract all files into a local folder.
 
-2. **Generate Required Icons** *(if missing)*
-   - Open `generate-icons.html` in your browser.
-   - Click “Generate Icons” and download all sizes.
-   - Save them in the `icons/` folder as:
-     - `icon16.png`
-     - `icon48.png`
-     - `icon128.png`
-
-3. **Install in Firefox**
+2. **Install in Firefox**
    - Open Firefox and navigate to `about:debugging`.
    - Click **"This Firefox"** on the sidebar.
    - Click **"Load Temporary Add-on"** and select `manifest.json`.
 
-4. **Test the Extension**
+3. **Test the Extension**
    - Go to [Gmail](https://mail.google.com).
    - The extension activates automatically.
    - Use the toolbar icon to open the popup.
