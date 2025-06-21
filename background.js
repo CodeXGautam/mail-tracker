@@ -135,55 +135,22 @@ async function initializeUser() {
           console.error("❌ Failed to auto-create user:", data.error);
         }
       } else {
-        console.log("⚠️ Could not detect Gmail user email");
-        throw new Error("Could not detect Gmail user email");
+        console.log("⚠️ Could not detect Gmail user email - user will be created when first email is sent");
+        // Don't create a manual user, just mark as not initialized
+        extensionState.isInitialized = false;
+        saveExtensionState();
       }
     } else {
-      console.log("⚠️ Not on Gmail, attempting manual initialization...");
-      
-      // Try manual initialization with a generic email
-      const manualEmail = `user-${Date.now()}@mailtracker.local`;
-      console.log("📧 Using manual email:", manualEmail);
-      
-      const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email: manualEmail,
-          name: "Manual User"
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Manual initialization failed:", response.status, "Response:", errorText);
-        throw new Error(`Manual initialization failed: HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        extensionState.apiKey = data.user.apiKey;
-        extensionState.isInitialized = true;
-        saveExtensionState();
-        console.log("✅ Manual user created and authenticated:", data.user.email);
-        
-        // Navigate to the extension's main page after successful initialization
-        try {
-          const extensionUrl = browser.runtime.getURL('index.html');
-          await browser.tabs.create({ url: extensionUrl });
-          console.log("🌐 Navigated to extension main page");
-        } catch (navError) {
-          console.error("❌ Navigation error:", navError);
-        }
-      } else {
-        console.error("❌ Failed to create manual user:", data.error);
-        throw new Error("Failed to create manual user");
-      }
+      console.log("⚠️ Not on Gmail - user will be created when first email is sent from Gmail");
+      // Don't create a manual user, just mark as not initialized
+      extensionState.isInitialized = false;
+      saveExtensionState();
     }
   } catch (error) {
     console.error("❌ Auto-initialization error:", error);
-    throw error;
+    // Don't throw error, just mark as not initialized
+    extensionState.isInitialized = false;
+    saveExtensionState();
   }
 }
 
@@ -274,19 +241,64 @@ async function handleEmailSent(email, sendResponse) {
     return;
   }
 
-  // Check if user is initialized, if not, try to initialize
-  if (!extensionState.isInitialized) {
-    console.log("🔄 User not initialized, attempting auto-initialization...");
-    await initializeUser();
-  }
-
-  // Check if user is authenticated
+  // Check if user is authenticated, if not, try to create user from email sender
   if (!extensionState.apiKey) {
-    sendResponse({ 
-      success: false, 
-      reason: "Could not authenticate user. Please make sure you're on Gmail and try again." 
-    });
-    return;
+    console.log("🔄 User not authenticated, attempting to create user from email sender...");
+    
+    if (email.from && email.from.includes('@')) {
+      try {
+        const senderEmail = email.from;
+        console.log("📧 Creating user from email sender:", senderEmail);
+        
+        const response = await fetch("https://mail-tracker-k1hl.onrender.com/auth/auto-create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            email: senderEmail,
+            name: senderEmail.split('@')[0]
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ User creation failed:", response.status, "Response:", errorText);
+          sendResponse({ 
+            success: false, 
+            reason: "Could not create user account. Please try again." 
+          });
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          extensionState.apiKey = data.user.apiKey;
+          extensionState.isInitialized = true;
+          saveExtensionState();
+          console.log("✅ User created and authenticated from email sender:", data.user.email);
+        } else {
+          console.error("❌ Failed to create user:", data.error);
+          sendResponse({ 
+            success: false, 
+            reason: "Could not create user account. Please try again." 
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("❌ Error creating user from email sender:", error);
+        sendResponse({ 
+          success: false, 
+          reason: "Could not create user account. Please try again." 
+        });
+        return;
+      }
+    } else {
+      sendResponse({ 
+        success: false, 
+        reason: "Could not determine email sender. Please make sure you're sending from Gmail." 
+      });
+      return;
+    }
   }
 
   // The email object from the content script is now the single source of truth.

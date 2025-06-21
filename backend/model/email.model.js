@@ -50,6 +50,7 @@ const emailSchema = new mongoose.Schema({
   // User agent and IP for tracking
   userAgent: String,
   ipAddress: String,
+  senderIpAddress: String, // IP address of the sender when email was sent
   
   // Campaign tracking (optional)
   campaignId: String,

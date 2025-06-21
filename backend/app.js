@@ -225,87 +225,130 @@ app.get("/pixel.png", async (req, res) => {
 
     console.log("📌 Tracking pixel accessed:", logEntry);
 
-    // --- Update email status to 'read' using emailId ---
+    // --- Check if this is the sender accessing their own email ---
+    let isSenderAccess = false;
     try {
       if (mongoose.connection.readyState) {
-        console.log("🔍 Searching for email with emailId:", emailId);
-        
-        // First, try to find the email without userId filter (for backward compatibility)
-        let result = await Email.findOneAndUpdate(
-          { emailId },
-          { 
-            $set: { 
-              status: "read", 
-              lastUpdate: new Date(),
-              readTime: new Date(),
-              "trackingData.lastOpen": new Date(),
-              userAgent,
-              ipAddress: ip
-            },
-            $inc: { "trackingData.opens": 1 }
-          },
-          { new: true }
-        );
-        
-        if (!result) {
-          console.log("⚠️ Email not found with emailId:", emailId);
-          console.log("🔍 Checking if email exists in database...");
-          
-          // Check if any email with this emailId exists
-          const existingEmail = await Email.findOne({ emailId });
-          if (existingEmail) {
-            console.log("✅ Email found but update failed:", existingEmail._id);
-            
-            // Try a simpler update without $inc
-            try {
-              const simpleUpdate = await Email.findOneAndUpdate(
-                { emailId },
-                { 
-                  $set: { 
-                    status: "read", 
-                    lastUpdate: new Date(),
-                    readTime: new Date(),
-                    userAgent,
-                    ipAddress: ip
-                  }
-                },
-                { new: true }
-              );
-              if (simpleUpdate) {
-                console.log("✅ Simple update successful for emailId:", emailId);
-              }
-            } catch (simpleErr) {
-              console.error("❌ Simple update also failed:", simpleErr.message);
-            }
-          } else {
-            console.log("❌ No email found with emailId:", emailId);
+        // Find the email to get sender information
+        const email = await Email.findOne({ emailId });
+        if (email) {
+          // Check if the IP matches the sender's IP (from when email was sent)
+          if (email.senderIpAddress && email.senderIpAddress === ip) {
+            console.log("🚫 Sender accessing their own email - IP match");
+            isSenderAccess = true;
           }
-        } else {
-          console.log("✅ DB update successful for emailId:", emailId, "Email ID:", result._id);
+          
+          // Check if user agent matches (sender likely uses same browser)
+          if (!isSenderAccess && email.userAgent && email.userAgent === userAgent) {
+            console.log("🚫 Sender accessing their own email - User agent match");
+            isSenderAccess = true;
+          }
+          
+          // Additional check: if it's a local/development IP
+          if (!isSenderAccess && (ip === "::1" || ip === "127.0.0.1" || ip === "::ffff:127.0.0.1")) {
+            console.log("🚫 Local/development access detected - not marking as read");
+            isSenderAccess = true;
+          }
+          
+          // Additional check: if referer contains Gmail (sender viewing their own sent email)
+          const referer = req.headers["referer"];
+          if (!isSenderAccess && referer && referer.includes("mail.google.com")) {
+            console.log("🚫 Gmail referer detected - likely sender viewing own email");
+            isSenderAccess = true;
+          }
         }
-      } else {
-        console.log("⚠️ Database not connected, skipping DB update for emailId:", emailId);
       }
     } catch (err) {
-      console.error("❌ Failed to update email status to 'read' for:", emailId, err);
-      
-      // Try a fallback update without complex operations
+      console.error("❌ Error checking sender access:", err);
+      // If we can't determine, assume it's not the sender to be safe
+      isSenderAccess = false;
+    }
+
+    // --- Update email status to 'read' only if not sender access ---
+    if (!isSenderAccess) {
       try {
-        const fallbackUpdate = await Email.findOneAndUpdate(
-          { emailId },
-          { 
-            $set: { 
-              status: "read", 
-              lastUpdate: new Date()
+        if (mongoose.connection.readyState) {
+          console.log("🔍 Searching for email with emailId:", emailId);
+          
+          // First, try to find the email without userId filter (for backward compatibility)
+          let result = await Email.findOneAndUpdate(
+            { emailId },
+            { 
+              $set: { 
+                status: "read", 
+                lastUpdate: new Date(),
+                readTime: new Date(),
+                "trackingData.lastOpen": new Date(),
+                userAgent,
+                ipAddress: ip
+              },
+              $inc: { "trackingData.opens": 1 }
+            },
+            { new: true }
+          );
+          
+          if (!result) {
+            console.log("⚠️ Email not found with emailId:", emailId);
+            console.log("🔍 Checking if email exists in database...");
+            
+            // Check if any email with this emailId exists
+            const existingEmail = await Email.findOne({ emailId });
+            if (existingEmail) {
+              console.log("✅ Email found but update failed:", existingEmail._id);
+              
+              // Try a simpler update without $inc
+              try {
+                const simpleUpdate = await Email.findOneAndUpdate(
+                  { emailId },
+                  { 
+                    $set: { 
+                      status: "read", 
+                      lastUpdate: new Date(),
+                      readTime: new Date(),
+                      userAgent,
+                      ipAddress: ip
+                    }
+                  },
+                  { new: true }
+                );
+                if (simpleUpdate) {
+                  console.log("✅ Simple update successful for emailId:", emailId);
+                }
+              } catch (simpleErr) {
+                console.error("❌ Simple update also failed:", simpleErr.message);
+              }
+            } else {
+              console.log("❌ No email found with emailId:", emailId);
             }
+          } else {
+            console.log("✅ DB update successful for emailId:", emailId, "Email ID:", result._id);
           }
-        );
-        if (fallbackUpdate) {
-          console.log("✅ Fallback update successful for emailId:", emailId);
+        } else {
+          console.log("⚠️ Database not connected, skipping DB update for emailId:", emailId);
         }
-      } catch (fallbackErr) {
-        console.error("❌ Fallback update also failed:", fallbackErr.message);
+      } catch (err) {
+        console.error("❌ Failed to update email status to 'read' for:", emailId, err);
+        
+        // Try a fallback update without complex operations
+        try {
+          const fallbackUpdate = await Email.findOneAndUpdate(
+            { emailId },
+            { 
+              $set: { 
+                status: "read", 
+                lastUpdate: new Date()
+              }
+            }
+          );
+          if (fallbackUpdate) {
+            console.log("✅ Fallback update successful for emailId:", emailId);
+          }
+        } catch (fallbackErr) {
+          console.error("❌ Fallback update also failed:", fallbackErr.message);
+        }
       }
+    } else {
+      console.log("📝 Logging pixel access but not marking as read (sender access)");
     }
 
     // Always log the pixel access, even if DB update fails
@@ -386,6 +429,10 @@ app.post("/emails", authenticateApiKey, async (req, res) => {
     
     // Add user ID to email data
     email.userId = req.user._id;
+    
+    // Capture sender's IP address for later comparison
+    const senderIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    email.senderIpAddress = senderIp;
     
     // Allow status-only updates
     if (email && email.emailId && email.status && !email.hasTrackingPixel) {
