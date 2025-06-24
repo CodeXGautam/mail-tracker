@@ -5,6 +5,9 @@
 🔗 **[Live Add-on on Firefox](https://addons.mozilla.org/addon/mail-tracker-pro/)**
 
 
+
+
+
 ![Dashboard Preview](icons/dashboard.png)
 
 ---
