@@ -2,7 +2,8 @@
 
 **Mail Tracker Pro** is a powerful email tracking extension for Gmail, designed to provide **real-time notifications** and **detailed analytics** when your emails are opened. Seamlessly integrated with Gmail, this extension offers insight and visibility into your email interactions—right from your browser.
 
-**Live ADD ON Link for FireFox ** (https://addons.mozilla.org/addon/mail-tracker-pro/)
+🔗 **[Live Add-on on Firefox](https://addons.mozilla.org/addon/mail-tracker-pro/)**
+
 
 ![Dashboard Preview](icons/dashboard.png)
 
